@@ -7,6 +7,12 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
 } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -60,6 +66,34 @@ const getRankColor = (rank: string): string => {
   }
 };
 
+const calculateLevel = (experience: number) => {
+  if (experience >= 1600) return "S";
+  if (experience >= 800) return "A";
+  if (experience >= 400) return "B";
+  if (experience >= 200) return "C";
+  if (experience >= 50) return "D";
+  return "E";
+};
+
+const getNextLevelXP = (currentLevel: string) => {
+  switch (currentLevel) {
+    case "E":
+      return 50;
+    case "D":
+      return 100;
+    case "C":
+      return 200;
+    case "B":
+      return 400;
+    case "A":
+      return 800;
+    case "S":
+      return 1600; // Max level
+    default:
+      return 50;
+  }
+};
+
 export default function Profile() {
   const { profile } = useAuth();
   const [isPublic, setIsPublic] = useState(profile?.is_public || false);
@@ -71,13 +105,6 @@ export default function Profile() {
     UserChallengeWithDetails[]
   >([]);
   const [loadingChallenges, setLoadingChallenges] = useState(true);
-
-  useEffect(() => {
-    if (profile) {
-      setIsPublic(profile.is_public || false);
-      loadCompletedChallenges();
-    }
-  }, [profile, loadCompletedChallenges]);
 
   const loadCompletedChallenges = useCallback(async () => {
     try {
@@ -104,6 +131,13 @@ export default function Profile() {
     }
   }, [profile?.id]);
 
+  useEffect(() => {
+    if (profile) {
+      setIsPublic(profile.is_public || false);
+      loadCompletedChallenges();
+    }
+  }, [profile, loadCompletedChallenges]);
+
   const togglePrivacy = async () => {
     if (!profile) return;
     try {
@@ -124,6 +158,15 @@ export default function Profile() {
   };
 
   if (!profile) return null;
+
+  const getRank = (value: number): string => {
+    if (value >= 90) return "S";
+    if (value >= 80) return "A";
+    if (value >= 70) return "B";
+    if (value >= 60) return "C";
+    if (value >= 50) return "D";
+    return "E";
+  };
 
   const averageStat = Math.round(
     (profile.fuerza +
@@ -189,17 +232,122 @@ export default function Profile() {
 
       <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
         <h2 className="text-2xl font-thin text-white mb-6">
-          Gráfico de Estadísticas
+          Estadísticas Detalladas
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          {[
+            { name: "Fuerza", value: profile.fuerza, rank: getRank(profile.fuerza) },
+            { name: "Resistencia", value: profile.resistencia, rank: getRank(profile.resistencia) },
+            { name: "Técnica", value: profile.tecnica, rank: getRank(profile.tecnica) },
+            { name: "Velocidad", value: profile.definicion, rank: getRank(profile.definicion) },
+            { name: "Constancia", value: profile.constancia, rank: getRank(profile.constancia) },
+          ].map((stat) => (
+            <div key={stat.name} className="text-center">
+              <div className={`w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRankColor(stat.rank)} rounded-sm flex items-center justify-center`}>
+                <span className="text-2xl font-thin text-white">{stat.rank}</span>
+              </div>
+              <h3 className="text-white font-light text-sm mb-1">{stat.name}</h3>
+              <p className="text-gray-400 text-xs">{stat.value}/100</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
+        <h2 className="text-2xl font-thin text-white mb-6">
+          Progreso de Nivel
+        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-center">
+            <div className="text-4xl font-thin text-white mb-1">
+              {profile.level || "E"}
+            </div>
+            <div className="text-sm text-gray-400">Nivel Actual</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-thin text-white mb-1">
+              {profile.experience || 0}
+            </div>
+            <div className="text-sm text-gray-400">XP Total</div>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-thin text-white mb-1">
+              {calculateLevel((profile.experience || 0) + getNextLevelXP(profile.level || "E") - (profile.experience || 0))}
+            </div>
+            <div className="text-sm text-gray-400">Siguiente Nivel</div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-400 mb-2">
+            <span>Nivel {profile.level || "E"}</span>
+            <span>
+              {profile.experience || 0} / {getNextLevelXP(profile.level || "E")} XP
+            </span>
+          </div>
+          <div className="w-full bg-[#0a0a0a] rounded-full h-4">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-500"
+              style={{
+                width: `${Math.min(
+                  100,
+                  ((profile.experience || 0) / getNextLevelXP(profile.level || "E")) * 100
+                )}%`,
+              }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              layout="horizontal"
+              data={[
+                { level: "E", xp: Math.min(50, profile.experience || 0), required: 50 },
+                { level: "D", xp: Math.max(0, Math.min(100, (profile.experience || 0) - 50)), required: 50 },
+                { level: "C", xp: Math.max(0, Math.min(200, (profile.experience || 0) - 100)), required: 100 },
+                { level: "B", xp: Math.max(0, Math.min(400, (profile.experience || 0) - 200)), required: 200 },
+                { level: "A", xp: Math.max(0, Math.min(800, (profile.experience || 0) - 400)), required: 400 },
+                { level: "S", xp: Math.max(0, Math.min(1600, (profile.experience || 0) - 800)), required: 800 },
+              ]}
+              margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+              <XAxis type="number" stroke="#9ca3af" fontSize={12} />
+              <YAxis dataKey="level" type="category" stroke="#9ca3af" fontSize={12} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#141414",
+                  border: "1px solid #1f1f1f",
+                  borderRadius: "4px",
+                  color: "#ffffff",
+                }}
+                formatter={(value: any, name: any) => [
+                  `${value} XP`,
+                  name === "xp" ? "Progreso" : "Requerido"
+                ]}
+                labelStyle={{ color: "#ffffff" }}
+              />
+              <Bar dataKey="xp" fill="#3b82f6" name="Progreso" radius={[0, 4, 4, 0]} />
+              <Bar dataKey="required" fill="#1f2937" name="Requerido" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
+        <h2 className="text-2xl font-thin text-white mb-6">
+          Comparación de Estadísticas
         </h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               data={[
-                { stat: "Fuerza", value: profile.fuerza },
-                { stat: "Resistencia", value: profile.resistencia },
-                { stat: "Técnica", value: profile.tecnica },
-                { stat: "Definición", value: profile.definicion },
-                { stat: "Constancia", value: profile.constancia },
+                { stat: "Fuerza", value: profile.fuerza, rank: getRank(profile.fuerza) },
+                { stat: "Resistencia", value: profile.resistencia, rank: getRank(profile.resistencia) },
+                { stat: "Técnica", value: profile.tecnica, rank: getRank(profile.tecnica) },
+                { stat: "Velocidad", value: profile.definicion, rank: getRank(profile.definicion) },
+                { stat: "Constancia", value: profile.constancia, rank: getRank(profile.constancia) },
               ]}
             >
               <PolarGrid />

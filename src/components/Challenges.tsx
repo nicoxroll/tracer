@@ -38,6 +38,12 @@ export default function Challenges() {
     }
   }, [profile]);
 
+  useEffect(() => {
+    if (profile && userChallenges.length > 0) {
+      checkAndCompleteChallenges();
+    }
+  }, [profile, userChallenges]);
+
   async function loadChallenges() {
     try {
       const { data, error } = await supabase
@@ -119,6 +125,152 @@ export default function Challenges() {
         return "📅";
       default:
         return "🏆";
+    }
+  };
+
+  // Award experience and update level
+  const awardExperience = async (amount: number, reason: string, relatedId?: string) => {
+    if (!profile) return;
+
+    try {
+      // Get current experience
+      const { data: currentProfile } = await supabase
+        .from("profiles")
+        .select("experience, level")
+        .eq("id", profile.id)
+        .single();
+
+      if (!currentProfile) return;
+
+      const newExperience = (currentProfile.experience || 0) + amount;
+      const newLevel = calculateLevel(newExperience);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          experience: newExperience,
+          level: newLevel,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profile.id);
+
+      if (updateError) throw updateError;
+
+      // Record experience gain
+      const { error: historyError } = await supabase
+        .from("experience_history")
+        .insert({
+          user_id: profile.id,
+          experience_gained: amount,
+          reason,
+          related_id: relatedId,
+        });
+
+      if (historyError) throw historyError;
+    } catch (error) {
+      console.error("Error awarding experience:", error);
+    }
+  };
+
+  // Calculate level based on experience
+  const calculateLevel = (experience: number) => {
+    if (experience >= 1600) return "S";
+    if (experience >= 800) return "A";
+    if (experience >= 400) return "B";
+    if (experience >= 200) return "C";
+    if (experience >= 50) return "D";
+    return "E";
+  };
+
+  // Check and complete challenges when progress reaches target
+  const checkAndCompleteChallenges = async () => {
+    if (!profile) return;
+
+    try {
+      // Get user's current stats
+      const { data: userStats } = await supabase
+        .from("profiles")
+        .select("fuerza, resistencia, tecnica, definicion, constancia")
+        .eq("id", profile.id)
+        .single();
+
+      if (!userStats) return;
+
+      // Check each user challenge
+      for (const userChallenge of userChallenges) {
+        if (userChallenge.completed) continue;
+
+        const challenge = userChallenge.challenge;
+        if (!challenge) continue;
+
+        // Check if progress meets target based on stat type
+        let currentProgress = 0;
+        switch (challenge.stat_type) {
+          case "fuerza":
+            currentProgress = userStats.fuerza || 0;
+            break;
+          case "resistencia":
+            currentProgress = userStats.resistencia || 0;
+            break;
+          case "tecnica":
+            currentProgress = userStats.tecnica || 0;
+            break;
+          case "definicion":
+            currentProgress = userStats.definicion || 0;
+            break;
+          case "constancia":
+            currentProgress = userStats.constancia || 0;
+            break;
+        }
+
+        if (currentProgress >= challenge.target_value) {
+          // Mark challenge as completed
+          const { error: updateError } = await supabase
+            .from("user_challenges")
+            .update({
+              progress: currentProgress,
+              completed: true,
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", userChallenge.id);
+
+          if (updateError) throw updateError;
+
+          // Award experience based on difficulty
+          let xpReward = 0;
+          switch (challenge.difficulty) {
+            case "beginner":
+              xpReward = 25;
+              break;
+            case "intermediate":
+              xpReward = 50;
+              break;
+            case "advanced":
+              xpReward = 100;
+              break;
+          }
+
+          await awardExperience(xpReward, "challenge_completed", userChallenge.id);
+        } else if (currentProgress !== userChallenge.progress) {
+          // Update progress if it changed
+          const { error: progressError } = await supabase
+            .from("user_challenges")
+            .update({
+              progress: currentProgress,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", userChallenge.id);
+
+          if (progressError) throw progressError;
+        }
+      }
+
+      // Reload challenges to reflect changes
+      loadUserChallenges();
+    } catch (error) {
+      console.error("Error checking challenge completion:", error);
     }
   };
 

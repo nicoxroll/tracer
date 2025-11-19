@@ -42,10 +42,10 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <div className="flex items-center gap-2">
+              <Link to="/tracking" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                 <Dumbbell className="w-6 h-6" />
                 <span className="text-xl font-thin">TRACER</span>
-              </div>
+              </Link>
 
               <nav className="hidden md:flex ml-10 space-x-1">
                 {menuItems.map((item) => (

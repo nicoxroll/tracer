@@ -235,8 +235,7 @@ export default function WeeklyPlanner() {
 
         dailyStats.push({
           date: date.toLocaleDateString("es-ES", {
-            month: "short",
-            day: "numeric",
+            weekday: "short",
           }),
           completed: dayData.completed,
           total: dayData.total,

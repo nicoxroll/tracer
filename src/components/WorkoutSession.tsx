@@ -59,33 +59,6 @@ export default function WorkoutSession({
   const [loading, setLoading] = useState(true);
   const [sessionStarted, setSessionStarted] = useState(false);
 
-  useEffect(() => {
-    loadExercises();
-    loadExistingSession();
-  }, [loadExercises, loadExistingSession]);
-
-  // Workout timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isWorkoutRunning && sessionStarted) {
-      interval = setInterval(() => {
-        setWorkoutTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isWorkoutRunning, sessionStarted]);
-
-  // Rest timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRestRunning) {
-      interval = setInterval(() => {
-        setRestTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isRestRunning]);
-
   const loadExercises = useCallback(async () => {
     try {
       const { data, error } = await supabase
@@ -128,6 +101,11 @@ export default function WorkoutSession({
       console.error("Error loading existing session:", error);
     }
   }, [profile, routineId]);
+
+  useEffect(() => {
+    loadExercises();
+    loadExistingSession();
+  }, [loadExercises, loadExistingSession]);
 
   async function startWorkout() {
     if (!profile) return;

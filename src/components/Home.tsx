@@ -10,11 +10,12 @@ import {
   Target,
 } from "lucide-react";
 import {
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -221,16 +222,16 @@ export default function Home() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-light text-gray-300">
-                      Constancia
+                      Peso
                     </span>
                     <span className="text-sm font-light text-white">
-                      {getRank(profile?.constancia || 0)}
+                      {getRank(profile?.definicion || 0)}
                     </span>
                   </div>
                   <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 transition-all duration-500 rounded-full"
-                      style={{ width: `${profile?.constancia}%` }}
+                      className="h-full bg-gradient-to-r from-green-500 to-emerald-500 transition-all duration-500 rounded-full"
+                      style={{ width: `${profile?.definicion}%` }}
                     />
                   </div>
                 </div>
@@ -241,33 +242,44 @@ export default function Home() {
               <div className="flex items-center gap-3 mb-6">
                 <Target className="w-6 h-6 text-gray-400" />
                 <h2 className="text-2xl font-thin text-white">
-                  Gráfico de Estadísticas
+                  Niveles de Estadísticas
                 </h2>
               </div>
 
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart
+                  <BarChart
                     data={[
-                      { stat: "Fuerza", value: profile?.fuerza || 0 },
-                      { stat: "Resistencia", value: profile?.resistencia || 0 },
-                      { stat: "Técnica", value: profile?.tecnica || 0 },
-                      { stat: "Definición", value: profile?.definicion || 0 },
-                      { stat: "Constancia", value: profile?.constancia || 0 },
+                      { stat: "Fuerza", level: getRank(profile?.fuerza || 0), value: profile?.fuerza || 0 },
+                      { stat: "Resistencia", level: getRank(profile?.resistencia || 0), value: profile?.resistencia || 0 },
+                      { stat: "Técnica", level: getRank(profile?.tecnica || 0), value: profile?.tecnica || 0 },
+                      { stat: "Peso", level: getRank(profile?.definicion || 0), value: profile?.definicion || 0 },
+                      { stat: "Constancia", level: getRank(profile?.constancia || 0), value: profile?.constancia || 0 },
                     ]}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="stat" />
-                    <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                    <Radar
-                      name="Estadísticas"
-                      dataKey="value"
-                      stroke="#ffffff"
-                      fill="#ffffff"
-                      fillOpacity={0.1}
-                      strokeWidth={2}
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                    <XAxis dataKey="stat" stroke="#9ca3af" fontSize={12} />
+                    <YAxis domain={[0, 100]} stroke="#9ca3af" fontSize={12} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#141414",
+                        border: "1px solid #1f1f1f",
+                        borderRadius: "4px",
+                        color: "#ffffff",
+                      }}
+                      labelStyle={{ color: "#ffffff" }}
+                      formatter={(value: any, name: any, props: any) => [
+                        `${props.payload.level} (${value}%)`,
+                        "Nivel"
+                      ]}
                     />
-                  </RadarChart>
+                    <Bar
+                      dataKey="value"
+                      fill="#ffffff"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
