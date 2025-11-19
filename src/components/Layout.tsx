@@ -1,19 +1,19 @@
-import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import {
+  Activity,
+  BookOpen,
+  Calendar,
   Dumbbell,
   Home,
-  Calendar,
-  BookOpen,
-  Users,
-  User,
   LogOut,
   Menu,
-  X,
   Trophy,
-  Activity,
+  User,
+  Users,
+  X,
 } from "lucide-react";
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -42,7 +42,10 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Link to="/tracking" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+              <Link
+                to="/tracking"
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <Dumbbell className="w-6 h-6" />
                 <span className="text-xl font-thin">TRACER</span>
               </Link>

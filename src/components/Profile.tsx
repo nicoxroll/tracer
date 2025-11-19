@@ -1,18 +1,18 @@
 import { Globe, Lock, Trophy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
+  Bar,
+  BarChart,
+  CartesianGrid,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
   Radar,
   RadarChart,
   ResponsiveContainer,
-  BarChart,
-  Bar,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
 } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -236,17 +236,45 @@ export default function Profile() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {[
-            { name: "Fuerza", value: profile.fuerza, rank: getRank(profile.fuerza) },
-            { name: "Resistencia", value: profile.resistencia, rank: getRank(profile.resistencia) },
-            { name: "Técnica", value: profile.tecnica, rank: getRank(profile.tecnica) },
-            { name: "Velocidad", value: profile.definicion, rank: getRank(profile.definicion) },
-            { name: "Constancia", value: profile.constancia, rank: getRank(profile.constancia) },
+            {
+              name: "Fuerza",
+              value: profile.fuerza,
+              rank: getRank(profile.fuerza),
+            },
+            {
+              name: "Resistencia",
+              value: profile.resistencia,
+              rank: getRank(profile.resistencia),
+            },
+            {
+              name: "Técnica",
+              value: profile.tecnica,
+              rank: getRank(profile.tecnica),
+            },
+            {
+              name: "Velocidad",
+              value: profile.definicion,
+              rank: getRank(profile.definicion),
+            },
+            {
+              name: "Constancia",
+              value: profile.constancia,
+              rank: getRank(profile.constancia),
+            },
           ].map((stat) => (
             <div key={stat.name} className="text-center">
-              <div className={`w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRankColor(stat.rank)} rounded-sm flex items-center justify-center`}>
-                <span className="text-2xl font-thin text-white">{stat.rank}</span>
+              <div
+                className={`w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRankColor(
+                  stat.rank
+                )} rounded-sm flex items-center justify-center`}
+              >
+                <span className="text-2xl font-thin text-white">
+                  {stat.rank}
+                </span>
               </div>
-              <h3 className="text-white font-light text-sm mb-1">{stat.name}</h3>
+              <h3 className="text-white font-light text-sm mb-1">
+                {stat.name}
+              </h3>
               <p className="text-gray-400 text-xs">{stat.value}/100</p>
             </div>
           ))}
@@ -272,7 +300,11 @@ export default function Profile() {
           </div>
           <div className="text-center">
             <div className="text-4xl font-thin text-white mb-1">
-              {calculateLevel((profile.experience || 0) + getNextLevelXP(profile.level || "E") - (profile.experience || 0))}
+              {calculateLevel(
+                (profile.experience || 0) +
+                  getNextLevelXP(profile.level || "E") -
+                  (profile.experience || 0)
+              )}
             </div>
             <div className="text-sm text-gray-400">Siguiente Nivel</div>
           </div>
@@ -282,7 +314,8 @@ export default function Profile() {
           <div className="flex justify-between text-sm text-gray-400 mb-2">
             <span>Nivel {profile.level || "E"}</span>
             <span>
-              {profile.experience || 0} / {getNextLevelXP(profile.level || "E")} XP
+              {profile.experience || 0} / {getNextLevelXP(profile.level || "E")}{" "}
+              XP
             </span>
           </div>
           <div className="w-full bg-[#0a0a0a] rounded-full h-4">
@@ -291,7 +324,9 @@ export default function Profile() {
               style={{
                 width: `${Math.min(
                   100,
-                  ((profile.experience || 0) / getNextLevelXP(profile.level || "E")) * 100
+                  ((profile.experience || 0) /
+                    getNextLevelXP(profile.level || "E")) *
+                    100
                 )}%`,
               }}
             ></div>
@@ -303,18 +338,62 @@ export default function Profile() {
             <BarChart
               layout="horizontal"
               data={[
-                { level: "E", xp: Math.min(50, profile.experience || 0), required: 50 },
-                { level: "D", xp: Math.max(0, Math.min(100, (profile.experience || 0) - 50)), required: 50 },
-                { level: "C", xp: Math.max(0, Math.min(200, (profile.experience || 0) - 100)), required: 100 },
-                { level: "B", xp: Math.max(0, Math.min(400, (profile.experience || 0) - 200)), required: 200 },
-                { level: "A", xp: Math.max(0, Math.min(800, (profile.experience || 0) - 400)), required: 400 },
-                { level: "S", xp: Math.max(0, Math.min(1600, (profile.experience || 0) - 800)), required: 800 },
+                {
+                  level: "E",
+                  xp: Math.min(50, profile.experience || 0),
+                  required: 50,
+                },
+                {
+                  level: "D",
+                  xp: Math.max(
+                    0,
+                    Math.min(100, (profile.experience || 0) - 50)
+                  ),
+                  required: 50,
+                },
+                {
+                  level: "C",
+                  xp: Math.max(
+                    0,
+                    Math.min(200, (profile.experience || 0) - 100)
+                  ),
+                  required: 100,
+                },
+                {
+                  level: "B",
+                  xp: Math.max(
+                    0,
+                    Math.min(400, (profile.experience || 0) - 200)
+                  ),
+                  required: 200,
+                },
+                {
+                  level: "A",
+                  xp: Math.max(
+                    0,
+                    Math.min(800, (profile.experience || 0) - 400)
+                  ),
+                  required: 400,
+                },
+                {
+                  level: "S",
+                  xp: Math.max(
+                    0,
+                    Math.min(1600, (profile.experience || 0) - 800)
+                  ),
+                  required: 800,
+                },
               ]}
               margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
               <XAxis type="number" stroke="#9ca3af" fontSize={12} />
-              <YAxis dataKey="level" type="category" stroke="#9ca3af" fontSize={12} />
+              <YAxis
+                dataKey="level"
+                type="category"
+                stroke="#9ca3af"
+                fontSize={12}
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#141414",
@@ -324,12 +403,22 @@ export default function Profile() {
                 }}
                 formatter={(value: any, name: any) => [
                   `${value} XP`,
-                  name === "xp" ? "Progreso" : "Requerido"
+                  name === "xp" ? "Progreso" : "Requerido",
                 ]}
                 labelStyle={{ color: "#ffffff" }}
               />
-              <Bar dataKey="xp" fill="#3b82f6" name="Progreso" radius={[0, 4, 4, 0]} />
-              <Bar dataKey="required" fill="#1f2937" name="Requerido" radius={[0, 4, 4, 0]} />
+              <Bar
+                dataKey="xp"
+                fill="#3b82f6"
+                name="Progreso"
+                radius={[0, 4, 4, 0]}
+              />
+              <Bar
+                dataKey="required"
+                fill="#1f2937"
+                name="Requerido"
+                radius={[0, 4, 4, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -343,11 +432,31 @@ export default function Profile() {
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
               data={[
-                { stat: "Fuerza", value: profile.fuerza, rank: getRank(profile.fuerza) },
-                { stat: "Resistencia", value: profile.resistencia, rank: getRank(profile.resistencia) },
-                { stat: "Técnica", value: profile.tecnica, rank: getRank(profile.tecnica) },
-                { stat: "Velocidad", value: profile.definicion, rank: getRank(profile.definicion) },
-                { stat: "Constancia", value: profile.constancia, rank: getRank(profile.constancia) },
+                {
+                  stat: "Fuerza",
+                  value: profile.fuerza,
+                  rank: getRank(profile.fuerza),
+                },
+                {
+                  stat: "Resistencia",
+                  value: profile.resistencia,
+                  rank: getRank(profile.resistencia),
+                },
+                {
+                  stat: "Técnica",
+                  value: profile.tecnica,
+                  rank: getRank(profile.tecnica),
+                },
+                {
+                  stat: "Velocidad",
+                  value: profile.definicion,
+                  rank: getRank(profile.definicion),
+                },
+                {
+                  stat: "Constancia",
+                  value: profile.constancia,
+                  rank: getRank(profile.constancia),
+                },
               ]}
             >
               <PolarGrid />

@@ -1,17 +1,17 @@
-import { useEffect, useState, useCallback } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../contexts/AuthContext";
 import {
-  Square,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  CheckCircle,
   Circle,
   Clock,
-  Timer,
-  Play,
   Pause,
+  Play,
+  Square,
+  Timer,
 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 type Exercise = {
   id: string;

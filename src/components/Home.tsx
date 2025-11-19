@@ -1,23 +1,23 @@
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../contexts/AuthContext";
 import {
-  TrendingUp,
+  Award,
   Calendar,
   Dumbbell,
-  Users,
-  Award,
   Target,
+  TrendingUp,
+  Users,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 export default function Home() {
   const { profile } = useAuth();
@@ -250,11 +250,31 @@ export default function Home() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={[
-                      { stat: "Fuerza", level: getRank(profile?.fuerza || 0), value: profile?.fuerza || 0 },
-                      { stat: "Resistencia", level: getRank(profile?.resistencia || 0), value: profile?.resistencia || 0 },
-                      { stat: "Técnica", level: getRank(profile?.tecnica || 0), value: profile?.tecnica || 0 },
-                      { stat: "Peso", level: getRank(profile?.definicion || 0), value: profile?.definicion || 0 },
-                      { stat: "Constancia", level: getRank(profile?.constancia || 0), value: profile?.constancia || 0 },
+                      {
+                        stat: "Fuerza",
+                        level: getRank(profile?.fuerza || 0),
+                        value: profile?.fuerza || 0,
+                      },
+                      {
+                        stat: "Resistencia",
+                        level: getRank(profile?.resistencia || 0),
+                        value: profile?.resistencia || 0,
+                      },
+                      {
+                        stat: "Técnica",
+                        level: getRank(profile?.tecnica || 0),
+                        value: profile?.tecnica || 0,
+                      },
+                      {
+                        stat: "Peso",
+                        level: getRank(profile?.definicion || 0),
+                        value: profile?.definicion || 0,
+                      },
+                      {
+                        stat: "Constancia",
+                        level: getRank(profile?.constancia || 0),
+                        value: profile?.constancia || 0,
+                      },
                     ]}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
@@ -271,14 +291,10 @@ export default function Home() {
                       labelStyle={{ color: "#ffffff" }}
                       formatter={(value: any, name: any, props: any) => [
                         `${props.payload.level} (${value}%)`,
-                        "Nivel"
+                        "Nivel",
                       ]}
                     />
-                    <Bar
-                      dataKey="value"
-                      fill="#ffffff"
-                      radius={[4, 4, 0, 0]}
-                    />
+                    <Bar dataKey="value" fill="#ffffff" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

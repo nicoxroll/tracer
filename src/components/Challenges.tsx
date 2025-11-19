@@ -1,7 +1,7 @@
+import { CheckCircle, Plus, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import { Trophy, CheckCircle, Plus } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 type Challenge = {
   id: string;
@@ -129,7 +129,11 @@ export default function Challenges() {
   };
 
   // Award experience and update level
-  const awardExperience = async (amount: number, reason: string, relatedId?: string) => {
+  const awardExperience = async (
+    amount: number,
+    reason: string,
+    relatedId?: string
+  ) => {
     if (!profile) return;
 
     try {
@@ -252,7 +256,11 @@ export default function Challenges() {
               break;
           }
 
-          await awardExperience(xpReward, "challenge_completed", userChallenge.id);
+          await awardExperience(
+            xpReward,
+            "challenge_completed",
+            userChallenge.id
+          );
         } else if (currentProgress !== userChallenge.progress) {
           // Update progress if it changed
           const { error: progressError } = await supabase
