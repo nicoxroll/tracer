@@ -1,19 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
+import { Globe, Lock, Trophy } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Lock,
-  Globe,
-  Trophy,
-} from "lucide-react";
-import {
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   PolarRadiusAxis,
   Radar,
+  RadarChart,
   ResponsiveContainer,
 } from "recharts";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 type UserChallengeWithDetails = {
   id: string;
@@ -97,10 +93,10 @@ export default function Profile() {
         .order("completed_at", { ascending: false });
 
       if (error) throw error;
-      
+
       const challenges = data || [];
-      setCompletedChallenges(challenges.filter(c => c.completed));
-      setAcceptedChallenges(challenges.filter(c => !c.completed));
+      setCompletedChallenges(challenges.filter((c) => c.completed));
+      setAcceptedChallenges(challenges.filter((c) => !c.completed));
     } catch (error) {
       console.error("Error loading challenges:", error);
     } finally {
@@ -192,7 +188,9 @@ export default function Profile() {
       </div>
 
       <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
-        <h2 className="text-2xl font-thin text-white mb-6">Gráfico de Estadísticas</h2>
+        <h2 className="text-2xl font-thin text-white mb-6">
+          Gráfico de Estadísticas
+        </h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart
@@ -206,9 +204,9 @@ export default function Profile() {
             >
               <PolarGrid />
               <PolarAngleAxis dataKey="stat" />
-              <PolarRadiusAxis 
-                angle={90} 
-                domain={[0, 100]} 
+              <PolarRadiusAxis
+                angle={90}
+                domain={[0, 100]}
                 tickFormatter={(value) => {
                   if (value >= 90) return "S";
                   if (value >= 80) return "A";
@@ -232,9 +230,7 @@ export default function Profile() {
       </div>
 
       <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
-        <h2 className="text-2xl font-thin text-white mb-6">
-          Retos Aceptados
-        </h2>
+        <h2 className="text-2xl font-thin text-white mb-6">Retos Aceptados</h2>
 
         {loadingChallenges ? (
           <div className="text-center py-8">
@@ -264,14 +260,20 @@ export default function Profile() {
                   <div className="flex items-center justify-between text-sm mb-1">
                     <span className="text-gray-400">Progreso</span>
                     <span className="text-white">
-                      {userChallenge.progress} / {userChallenge.challenge.target_value}
+                      {userChallenge.progress} /{" "}
+                      {userChallenge.challenge.target_value}
                     </span>
                   </div>
                   <div className="h-2 bg-[#141414] rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all duration-300 rounded-full"
-                      style={{ 
-                        width: `${Math.min(100, (userChallenge.progress / userChallenge.challenge.target_value) * 100)}%` 
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          (userChallenge.progress /
+                            userChallenge.challenge.target_value) *
+                            100
+                        )}%`,
                       }}
                     />
                   </div>
@@ -281,7 +283,9 @@ export default function Profile() {
                     {userChallenge.challenge.difficulty}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span>{getCategoryIcon(userChallenge.challenge.category)}</span>
+                    <span>
+                      {getCategoryIcon(userChallenge.challenge.category)}
+                    </span>
                     {userChallenge.challenge.category}
                   </span>
                 </div>
@@ -325,7 +329,9 @@ export default function Profile() {
                     {userChallenge.challenge.difficulty}
                   </span>
                   <span className="flex items-center gap-1">
-                    <span>{getCategoryIcon(userChallenge.challenge.category)}</span>
+                    <span>
+                      {getCategoryIcon(userChallenge.challenge.category)}
+                    </span>
                     {userChallenge.challenge.category}
                   </span>
                   <span>

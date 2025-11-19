@@ -1,20 +1,31 @@
-import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
-import { supabase } from "../lib/supabase";
-import { useAuth } from "../contexts/AuthContext";
 import {
-  CheckCircle,
-  Clock,
-  Play,
-  X,
   AlertCircle,
+  Award,
+  Calendar as CalendarIcon,
+  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Calendar as CalendarIcon,
+  Clock,
+  Play,
   TrendingUp,
-  Award,
+  X,
 } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { useAuth } from "../contexts/AuthContext";
+import { supabase } from "../lib/supabase";
 
 type Routine = {
   id: string;
@@ -195,18 +206,25 @@ export default function WeeklyPlanner() {
 
       // Process data for charts
       const dailyStats = [];
-      const statusDistribution = { completed: 0, in_progress: 0, pending: 0, skipped: 0, incomplete: 0 };
+      const statusDistribution = {
+        completed: 0,
+        in_progress: 0,
+        pending: 0,
+        skipped: 0,
+        incomplete: 0,
+      };
 
       // Group by day
-      const dayMap = sessions?.reduce((acc: any, session) => {
-        const date = session.date;
-        if (!acc[date]) {
-          acc[date] = { completed: 0, total: 0 };
-        }
-        acc[date].total++;
-        if (session.completed) acc[date].completed++;
-        return acc;
-      }, {}) || {};
+      const dayMap =
+        sessions?.reduce((acc: any, session) => {
+          const date = session.date;
+          if (!acc[date]) {
+            acc[date] = { completed: 0, total: 0 };
+          }
+          acc[date].total++;
+          if (session.completed) acc[date].completed++;
+          return acc;
+        }, {}) || {};
 
       // Create daily chart data
       for (let i = 29; i >= 0; i--) {
@@ -216,9 +234,12 @@ export default function WeeklyPlanner() {
         const dayData = dayMap[dateStr] || { completed: 0, total: 0 };
 
         dailyStats.push({
-          date: date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' }),
+          date: date.toLocaleDateString("es-ES", {
+            month: "short",
+            day: "numeric",
+          }),
           completed: dayData.completed,
-          total: dayData.total
+          total: dayData.total,
         });
       }
 
@@ -226,10 +247,13 @@ export default function WeeklyPlanner() {
       const weekAgo = new Date();
       weekAgo.setDate(weekAgo.getDate() - 7);
 
-      const weekSessions = sessions?.filter(s => new Date(s.date) >= weekAgo) || [];
-      weekSessions.forEach(session => {
+      const weekSessions =
+        sessions?.filter((s) => new Date(s.date) >= weekAgo) || [];
+      weekSessions.forEach((session) => {
         if (session.completed) statusDistribution.completed++;
-        else if (new Date(session.date).toDateString() === new Date().toDateString()) {
+        else if (
+          new Date(session.date).toDateString() === new Date().toDateString()
+        ) {
           statusDistribution.in_progress++;
         } else {
           statusDistribution.incomplete++;
@@ -237,29 +261,39 @@ export default function WeeklyPlanner() {
       });
 
       // Add pending workouts (assigned but no session)
-      days.forEach(day => {
-        if (weeklyPlan[day] && !weekSessions.some(s => {
-          const sessionDate = new Date(s.date);
-          return days[sessionDate.getDay()] === day;
-        })) {
+      days.forEach((day) => {
+        if (
+          weeklyPlan[day] &&
+          !weekSessions.some((s) => {
+            const sessionDate = new Date(s.date);
+            return days[sessionDate.getDay()] === day;
+          })
+        ) {
           statusDistribution.pending++;
         }
       });
 
-      const statusData = Object.entries(statusDistribution).map(([status, count]) => ({
-        name: status,
-        value: count,
-        color: status === 'completed' ? '#10b981' :
-               status === 'in_progress' ? '#3b82f6' :
-               status === 'pending' ? '#f59e0b' :
-               status === 'skipped' ? '#ef4444' : '#f97316'
-      }));
+      const statusData = Object.entries(statusDistribution).map(
+        ([status, count]) => ({
+          name: status,
+          value: count,
+          color:
+            status === "completed"
+              ? "#10b981"
+              : status === "in_progress"
+              ? "#3b82f6"
+              : status === "pending"
+              ? "#f59e0b"
+              : status === "skipped"
+              ? "#ef4444"
+              : "#f97316",
+        })
+      );
 
       setStatsData({
         dailyStats,
-        statusData: statusData.filter(item => item.value > 0)
+        statusData: statusData.filter((item) => item.value > 0),
       });
-
     } catch (error) {
       console.error("Error loading stats:", error);
     }
@@ -274,7 +308,14 @@ export default function WeeklyPlanner() {
         loadStatsData();
       }
     }
-  }, [profile, loadRoutines, loadWeeklyPlan, loadWorkoutStatuses, viewMode, loadStatsData]);
+  }, [
+    profile,
+    loadRoutines,
+    loadWeeklyPlan,
+    loadWorkoutStatuses,
+    viewMode,
+    loadStatsData,
+  ]);
 
   // Assign routine to a day
   async function assignRoutine(day: string, routineId: string | null) {
@@ -394,10 +435,10 @@ export default function WeeklyPlanner() {
     return days;
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentMonth(prev => {
+  const navigateMonth = (direction: "prev" | "next") => {
+    setCurrentMonth((prev) => {
       const newMonth = new Date(prev);
-      if (direction === 'prev') {
+      if (direction === "prev") {
         newMonth.setMonth(prev.getMonth() - 1);
       } else {
         newMonth.setMonth(prev.getMonth() + 1);
@@ -417,167 +458,179 @@ export default function WeeklyPlanner() {
 
     return {
       status,
-      routine: getRoutineById(weeklyPlan[dayName]!)
+      routine: getRoutineById(weeklyPlan[dayName]!),
     };
   };
 
   const getStatusColor = (status: string | null) => {
     switch (status) {
-      case "completed": return "bg-green-500/20 border-green-500/50";
-      case "in_progress": return "bg-blue-500/20 border-blue-500/50";
-      case "pending": return "bg-yellow-500/20 border-yellow-500/50";
-      case "skipped": return "bg-red-500/20 border-red-500/50";
-      case "incomplete": return "bg-orange-500/20 border-orange-500/50";
-      default: return "bg-gray-500/20 border-gray-500/50";
+      case "completed":
+        return "bg-green-500/20 border-green-500/50";
+      case "in_progress":
+        return "bg-blue-500/20 border-blue-500/50";
+      case "pending":
+        return "bg-yellow-500/20 border-yellow-500/50";
+      case "skipped":
+        return "bg-red-500/20 border-red-500/50";
+      case "incomplete":
+        return "bg-orange-500/20 border-orange-500/50";
+      default:
+        return "bg-gray-500/20 border-gray-500/50";
     }
   };
 
   // Load exercises for selected day
-  const loadDayExercises = useCallback(async (day: Date | string) => {
-    let dayName: string;
+  const loadDayExercises = useCallback(
+    async (day: Date | string) => {
+      let dayName: string;
 
-    if (typeof day === 'string') {
-      dayName = day;
-    } else {
-      dayName = days[day.getDay()];
-    }
+      if (typeof day === "string") {
+        dayName = day;
+      } else {
+        dayName = days[day.getDay()];
+      }
 
-    const routineId = weeklyPlan[dayName];
+      const routineId = weeklyPlan[dayName];
 
-    if (!routineId) {
-      setSelectedDayExercises([]);
-      return;
-    }
+      if (!routineId) {
+        setSelectedDayExercises([]);
+        return;
+      }
 
-    try {
-      const { data, error } = await supabase
-        .from("exercises")
-        .select("*")
-        .eq("routine_id", routineId)
-        .order("order_index", { ascending: true });
-
-      if (error) throw error;
-      setSelectedDayExercises(data || []);
-    } catch (error) {
-      console.error("Error loading exercises:", error);
-      setSelectedDayExercises([]);
-    }
-  }, [weeklyPlan]);
-
-  // Update workout status manually
-  const updateWorkoutStatus = useCallback(async (dayName: string, newStatus: string) => {
-    if (!profile) return;
-
-    try {
-      const today = new Date();
-      const targetDate = new Date(today);
-      const dayIndex = days.indexOf(dayName);
-      targetDate.setDate(today.getDate() - today.getDay() + dayIndex);
-
-      // Check if session exists
-      const { data: existingSession } = await supabase
-        .from("workout_sessions")
-        .select("*")
-        .eq("user_id", profile.id)
-        .eq("date", targetDate.toISOString().split("T")[0])
-        .single();
-
-      if (existingSession) {
-        // Update existing session
-        const { error } = await supabase
-          .from("workout_sessions")
-          .update({
-            completed: newStatus === "completed",
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", existingSession.id);
+      try {
+        const { data, error } = await supabase
+          .from("exercises")
+          .select("*")
+          .eq("routine_id", routineId)
+          .order("order_index", { ascending: true });
 
         if (error) throw error;
+        setSelectedDayExercises(data || []);
+      } catch (error) {
+        console.error("Error loading exercises:", error);
+        setSelectedDayExercises([]);
+      }
+    },
+    [weeklyPlan]
+  );
 
-        // Award experience if completed and wasn't completed before
-        if (newStatus === "completed" && !existingSession.completed) {
-          await awardExperience(10, "workout_completed", existingSession.id);
-        }
-      } else if (weeklyPlan[dayName]) {
-        // Create new session
-        const { error } = await supabase
+  // Update workout status manually
+  const updateWorkoutStatus = useCallback(
+    async (dayName: string, newStatus: string) => {
+      if (!profile) return;
+
+      try {
+        const today = new Date();
+        const targetDate = new Date(today);
+        const dayIndex = days.indexOf(dayName);
+        targetDate.setDate(today.getDate() - today.getDay() + dayIndex);
+
+        // Check if session exists
+        const { data: existingSession } = await supabase
           .from("workout_sessions")
-          .insert({
+          .select("*")
+          .eq("user_id", profile.id)
+          .eq("date", targetDate.toISOString().split("T")[0])
+          .single();
+
+        if (existingSession) {
+          // Update existing session
+          const { error } = await supabase
+            .from("workout_sessions")
+            .update({
+              completed: newStatus === "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingSession.id);
+
+          if (error) throw error;
+
+          // Award experience if completed and wasn't completed before
+          if (newStatus === "completed" && !existingSession.completed) {
+            await awardExperience(10, "workout_completed", existingSession.id);
+          }
+        } else if (weeklyPlan[dayName]) {
+          // Create new session
+          const { error } = await supabase.from("workout_sessions").insert({
             user_id: profile.id,
             routine_id: weeklyPlan[dayName],
             date: targetDate.toISOString().split("T")[0],
-            completed: newStatus === "completed"
+            completed: newStatus === "completed",
           });
 
-        if (error) throw error;
+          if (error) throw error;
 
-        // Award experience if completed
-        if (newStatus === "completed") {
-          const { data: newSession } = await supabase
-            .from("workout_sessions")
-            .select("id")
-            .eq("user_id", profile.id)
-            .eq("date", targetDate.toISOString().split("T")[0])
-            .single();
+          // Award experience if completed
+          if (newStatus === "completed") {
+            const { data: newSession } = await supabase
+              .from("workout_sessions")
+              .select("id")
+              .eq("user_id", profile.id)
+              .eq("date", targetDate.toISOString().split("T")[0])
+              .single();
 
-          if (newSession) {
-            await awardExperience(10, "workout_completed", newSession.id);
+            if (newSession) {
+              await awardExperience(10, "workout_completed", newSession.id);
+            }
           }
         }
-      }
 
-      // Reload statuses
-      loadWorkoutStatuses();
-    } catch (error) {
-      console.error("Error updating workout status:", error);
-    }
-  }, [profile, weeklyPlan, loadWorkoutStatuses]);
+        // Reload statuses
+        loadWorkoutStatuses();
+      } catch (error) {
+        console.error("Error updating workout status:", error);
+      }
+    },
+    [profile, weeklyPlan, loadWorkoutStatuses]
+  );
 
   // Award experience and update level
-  const awardExperience = useCallback(async (amount: number, reason: string, relatedId?: string) => {
-    if (!profile) return;
+  const awardExperience = useCallback(
+    async (amount: number, reason: string, relatedId?: string) => {
+      if (!profile) return;
 
-    try {
-      // Get current experience
-      const { data: currentProfile } = await supabase
-        .from("profiles")
-        .select("experience, level")
-        .eq("id", profile.id)
-        .single();
+      try {
+        // Get current experience
+        const { data: currentProfile } = await supabase
+          .from("profiles")
+          .select("experience, level")
+          .eq("id", profile.id)
+          .single();
 
-      if (!currentProfile) return;
+        if (!currentProfile) return;
 
-      const newExperience = (currentProfile.experience || 0) + amount;
-      const newLevel = calculateLevel(newExperience);
+        const newExperience = (currentProfile.experience || 0) + amount;
+        const newLevel = calculateLevel(newExperience);
 
-      // Update profile
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          experience: newExperience,
-          level: newLevel,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", profile.id);
+        // Update profile
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            experience: newExperience,
+            level: newLevel,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", profile.id);
 
-      if (updateError) throw updateError;
+        if (updateError) throw updateError;
 
-      // Record experience gain
-      const { error: historyError } = await supabase
-        .from("experience_history")
-        .insert({
-          user_id: profile.id,
-          experience_gained: amount,
-          reason,
-          related_id: relatedId
-        });
+        // Record experience gain
+        const { error: historyError } = await supabase
+          .from("experience_history")
+          .insert({
+            user_id: profile.id,
+            experience_gained: amount,
+            reason,
+            related_id: relatedId,
+          });
 
-      if (historyError) throw historyError;
-
-    } catch (error) {
-      console.error("Error awarding experience:", error);
-    }
-  }, [profile]);
+        if (historyError) throw historyError;
+      } catch (error) {
+        console.error("Error awarding experience:", error);
+      }
+    },
+    [profile]
+  );
 
   // Calculate level based on experience
   const calculateLevel = (experience: number) => {
@@ -592,13 +645,20 @@ export default function WeeklyPlanner() {
   // Get XP needed for next level
   const getNextLevelXP = (currentLevel: string) => {
     switch (currentLevel) {
-      case "E": return 50;
-      case "D": return 100;
-      case "C": return 200;
-      case "B": return 400;
-      case "A": return 800;
-      case "S": return 1600; // Max level
-      default: return 50;
+      case "E":
+        return 50;
+      case "D":
+        return 100;
+      case "C":
+        return 200;
+      case "B":
+        return 400;
+      case "A":
+        return 800;
+      case "S":
+        return 1600; // Max level
+      default:
+        return 50;
     }
   };
 
@@ -606,9 +666,7 @@ export default function WeeklyPlanner() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-thin text-white mb-2">
-            Planificación
-          </h1>
+          <h1 className="text-3xl font-thin text-white mb-2">Planificación</h1>
           <p className="text-gray-400 font-light">
             Organiza tus entrenamientos
           </p>
@@ -675,7 +733,9 @@ export default function WeeklyPlanner() {
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
-                        <span className={`text-sm font-light ${statusInfo.color}`}>
+                        <span
+                          className={`text-sm font-light ${statusInfo.color}`}
+                        >
                           {statusInfo.text}
                         </span>
                       </div>
@@ -704,16 +764,19 @@ export default function WeeklyPlanner() {
             {/* Month Navigation */}
             <div className="flex items-center justify-between mb-6">
               <button
-                onClick={() => navigateMonth('prev')}
+                onClick={() => navigateMonth("prev")}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <h2 className="text-xl font-thin text-white">
-                {currentMonth.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+                {currentMonth.toLocaleDateString("es-ES", {
+                  month: "long",
+                  year: "numeric",
+                })}
               </h2>
               <button
-                onClick={() => navigateMonth('next')}
+                onClick={() => navigateMonth("next")}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -722,8 +785,11 @@ export default function WeeklyPlanner() {
 
             {/* Days of Week Header */}
             <div className="grid grid-cols-7 gap-2 mb-4">
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day) => (
-                <div key={day} className="text-center text-sm font-light text-gray-400 py-2">
+              {["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"].map((day) => (
+                <div
+                  key={day}
+                  className="text-center text-sm font-light text-gray-400 py-2"
+                >
                   {day}
                 </div>
               ))}
@@ -737,7 +803,8 @@ export default function WeeklyPlanner() {
                 }
 
                 const dayStatus = getDayStatus(date);
-                const isToday = date.toDateString() === new Date().toDateString();
+                const isToday =
+                  date.toDateString() === new Date().toDateString();
 
                 return (
                   <div
@@ -778,23 +845,33 @@ export default function WeeklyPlanner() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500/20 border border-green-500/50 rounded-sm"></div>
-                  <span className="text-xs text-gray-400 font-light">Completado</span>
+                  <span className="text-xs text-gray-400 font-light">
+                    Completado
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-blue-500/20 border border-blue-500/50 rounded-sm"></div>
-                  <span className="text-xs text-gray-400 font-light">En progreso</span>
+                  <span className="text-xs text-gray-400 font-light">
+                    En progreso
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-yellow-500/20 border border-yellow-500/50 rounded-sm"></div>
-                  <span className="text-xs text-gray-400 font-light">Pendiente</span>
+                  <span className="text-xs text-gray-400 font-light">
+                    Pendiente
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500/20 border border-red-500/50 rounded-sm"></div>
-                  <span className="text-xs text-gray-400 font-light">Saltado</span>
+                  <span className="text-xs text-gray-400 font-light">
+                    Saltado
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-orange-500/20 border border-orange-500/50 rounded-sm"></div>
-                  <span className="text-xs text-gray-400 font-light">Incompleto</span>
+                  <span className="text-xs text-gray-400 font-light">
+                    Incompleto
+                  </span>
                 </div>
               </div>
             </div>
@@ -809,14 +886,20 @@ export default function WeeklyPlanner() {
             {/* Experience and Level */}
             <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-thin text-white">Progreso y Nivel</h2>
+                <h2 className="text-2xl font-thin text-white">
+                  Progreso y Nivel
+                </h2>
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <div className="text-3xl font-thin text-white">{profile?.level || 'E'}</div>
+                    <div className="text-3xl font-thin text-white">
+                      {profile?.level || "E"}
+                    </div>
                     <div className="text-sm text-gray-400">Nivel</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-thin text-white">{profile?.experience || 0}</div>
+                    <div className="text-2xl font-thin text-white">
+                      {profile?.experience || 0}
+                    </div>
                     <div className="text-sm text-gray-400">XP</div>
                   </div>
                 </div>
@@ -825,14 +908,22 @@ export default function WeeklyPlanner() {
               {/* Experience Progress Bar */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-gray-400">
-                  <span>Nivel {profile?.level || 'E'}</span>
-                  <span>{profile?.experience || 0} / {getNextLevelXP(profile?.level || 'E')} XP</span>
+                  <span>Nivel {profile?.level || "E"}</span>
+                  <span>
+                    {profile?.experience || 0} /{" "}
+                    {getNextLevelXP(profile?.level || "E")} XP
+                  </span>
                 </div>
                 <div className="w-full bg-[#0a0a0a] rounded-full h-3">
                   <div
                     className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
                     style={{
-                      width: `${Math.min(100, ((profile?.experience || 0) / getNextLevelXP(profile?.level || 'E')) * 100)}%`
+                      width: `${Math.min(
+                        100,
+                        ((profile?.experience || 0) /
+                          getNextLevelXP(profile?.level || "E")) *
+                          100
+                      )}%`,
                     }}
                   ></div>
                 </div>
@@ -844,7 +935,9 @@ export default function WeeklyPlanner() {
               <>
                 {/* Daily Activity Chart */}
                 <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
-                  <h3 className="text-xl font-thin text-white mb-4">Actividad Diaria (Últimos 30 días)</h3>
+                  <h3 className="text-xl font-thin text-white mb-4">
+                    Actividad Diaria (Últimos 30 días)
+                  </h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={statsData.dailyStats}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
@@ -852,12 +945,16 @@ export default function WeeklyPlanner() {
                       <YAxis stroke="#9ca3af" fontSize={12} />
                       <Tooltip
                         contentStyle={{
-                          backgroundColor: '#141414',
-                          border: '1px solid #1f1f1f',
-                          borderRadius: '4px'
+                          backgroundColor: "#141414",
+                          border: "1px solid #1f1f1f",
+                          borderRadius: "4px",
                         }}
                       />
-                      <Bar dataKey="completed" fill="#10b981" name="Completados" />
+                      <Bar
+                        dataKey="completed"
+                        fill="#10b981"
+                        name="Completados"
+                      />
                       <Bar dataKey="total" fill="#3b82f6" name="Asignados" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -866,7 +963,9 @@ export default function WeeklyPlanner() {
                 {/* Status Distribution */}
                 {statsData.statusData.length > 0 && (
                   <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
-                    <h3 className="text-xl font-thin text-white mb-4">Distribución de Estados (Esta semana)</h3>
+                    <h3 className="text-xl font-thin text-white mb-4">
+                      Distribución de Estados (Esta semana)
+                    </h3>
                     <ResponsiveContainer width="100%" height={300}>
                       <PieChart>
                         <Pie
@@ -877,9 +976,11 @@ export default function WeeklyPlanner() {
                           dataKey="value"
                           label={({ name, value }) => `${name}: ${value}`}
                         >
-                          {statsData.statusData.map((entry: any, index: number) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
+                          {statsData.statusData.map(
+                            (entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            )
+                          )}
                         </Pie>
                         <Tooltip />
                       </PieChart>
@@ -898,15 +999,14 @@ export default function WeeklyPlanner() {
           <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-thin text-white">
-                {typeof selectedDay === 'string'
+                {typeof selectedDay === "string"
                   ? selectedDay
-                  : selectedDay.toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
-                }
+                  : selectedDay.toLocaleDateString("es-ES", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
               </h2>
               <button
                 onClick={() => setSelectedDay(null)}
@@ -920,13 +1020,15 @@ export default function WeeklyPlanner() {
               let dayName: string;
               let dayStatus: { status: string | null; routine: any };
 
-              if (typeof selectedDay === 'string') {
+              if (typeof selectedDay === "string") {
                 dayName = selectedDay;
                 const status = workoutStatuses[dayName];
                 const hasRoutine = !!weeklyPlan[dayName];
                 dayStatus = {
                   status,
-                  routine: hasRoutine ? getRoutineById(weeklyPlan[dayName]!) : null
+                  routine: hasRoutine
+                    ? getRoutineById(weeklyPlan[dayName]!)
+                    : null,
                 };
               } else {
                 dayName = days[selectedDay.getDay()];
@@ -942,7 +1044,9 @@ export default function WeeklyPlanner() {
                     </label>
                     <select
                       value={weeklyPlan[dayName] || ""}
-                      onChange={(e) => assignRoutine(dayName, e.target.value || null)}
+                      onChange={(e) =>
+                        assignRoutine(dayName, e.target.value || null)
+                      }
                       className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm px-4 py-2 text-white font-light focus:outline-none focus:border-white"
                     >
                       <option value="">Sin rutina</option>
@@ -961,15 +1065,37 @@ export default function WeeklyPlanner() {
                     </label>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                       {[
-                        { value: "pending", label: "Pendiente", color: "text-yellow-500" },
-                        { value: "in_progress", label: "En Progreso", color: "text-blue-500" },
-                        { value: "completed", label: "Completado", color: "text-green-500" },
-                        { value: "skipped", label: "Saltado", color: "text-red-500" },
-                        { value: "incomplete", label: "Incompleto", color: "text-orange-500" }
+                        {
+                          value: "pending",
+                          label: "Pendiente",
+                          color: "text-yellow-500",
+                        },
+                        {
+                          value: "in_progress",
+                          label: "En Progreso",
+                          color: "text-blue-500",
+                        },
+                        {
+                          value: "completed",
+                          label: "Completado",
+                          color: "text-green-500",
+                        },
+                        {
+                          value: "skipped",
+                          label: "Saltado",
+                          color: "text-red-500",
+                        },
+                        {
+                          value: "incomplete",
+                          label: "Incompleto",
+                          color: "text-orange-500",
+                        },
                       ].map((status) => (
                         <button
                           key={status.value}
-                          onClick={() => updateWorkoutStatus(dayName, status.value)}
+                          onClick={() =>
+                            updateWorkoutStatus(dayName, status.value)
+                          }
                           className={`px-3 py-2 rounded-sm border font-light transition-all duration-300 ${
                             dayStatus.status === status.value
                               ? `bg-white text-[#0a0a0a]`
@@ -985,13 +1111,22 @@ export default function WeeklyPlanner() {
                   {/* Exercises List */}
                   {dayStatus.routine && selectedDayExercises.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-thin text-white mb-4">Ejercicios</h3>
+                      <h3 className="text-lg font-thin text-white mb-4">
+                        Ejercicios
+                      </h3>
                       <div className="space-y-3">
                         {selectedDayExercises.map((exercise, index) => (
-                          <div key={exercise.id} className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-4">
+                          <div
+                            key={exercise.id}
+                            className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-4"
+                          >
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-white font-light">{exercise.name}</h4>
-                              <span className="text-sm text-gray-400">#{index + 1}</span>
+                              <h4 className="text-white font-light">
+                                {exercise.name}
+                              </h4>
+                              <span className="text-sm text-gray-400">
+                                #{index + 1}
+                              </span>
                             </div>
                             <div className="grid grid-cols-3 gap-4 text-sm text-gray-400">
                               <div>Series: {exercise.sets}</div>
@@ -999,7 +1134,9 @@ export default function WeeklyPlanner() {
                               <div>Descanso: {exercise.rest_seconds}s</div>
                             </div>
                             {exercise.description && (
-                              <p className="text-sm text-gray-500 mt-2">{exercise.description}</p>
+                              <p className="text-sm text-gray-500 mt-2">
+                                {exercise.description}
+                              </p>
                             )}
                           </div>
                         ))}
@@ -1012,7 +1149,9 @@ export default function WeeklyPlanner() {
                     <div className="bg-green-500/10 border border-green-500/20 rounded-sm p-4">
                       <div className="flex items-center gap-2 text-green-400">
                         <Award className="w-5 h-5" />
-                        <span className="font-light">¡Entrenamiento completado! +10 XP</span>
+                        <span className="font-light">
+                          ¡Entrenamiento completado! +10 XP
+                        </span>
                       </div>
                     </div>
                   )}
@@ -1025,9 +1164,7 @@ export default function WeeklyPlanner() {
 
       <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-thin text-white">
-            Rutinas Disponibles
-          </h2>
+          <h2 className="text-2xl font-thin text-white">Rutinas Disponibles</h2>
           <Link
             to="/routines"
             className="flex items-center gap-2 px-4 py-2 bg-white text-[#0a0a0a] rounded-sm font-light hover:bg-gray-100 transition-all duration-300"
