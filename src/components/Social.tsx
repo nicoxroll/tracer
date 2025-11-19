@@ -1,243 +1,357 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { Heart, MessageCircle, Share2, Trophy, Target, Dumbbell } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
+import {
+  Search,
+  ChevronRight,
+  Lock,
+  Globe,
+  TrendingUp,
+  Award,
+  Target,
+  Zap,
+  Heart,
+} from "lucide-react";
+import { Profile } from "../lib/supabase";
 
-type Post = {
+type Routine = {
   id: string;
-  content: string;
-  post_type: string;
-  likes_count: number;
-  created_at: string;
-  user_id: string;
-  profiles?: {
-    username: string;
-    full_name: string;
-  };
-  routines?: {
-    title: string;
-    difficulty: string;
-  };
+  title: string;
+  difficulty: string;
+  duration_minutes: number;
 };
 
 export default function Social() {
-  const { profile } = useAuth();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [newPostType, setNewPostType] = useState<'goal' | 'achievement' | 'routine'>('goal');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [userRoutines, setUserRoutines] = useState<Routine[]>([]);
+  const [loadingRoutines, setLoadingRoutines] = useState(false);
 
   useEffect(() => {
-    loadPosts();
+    loadUsers();
   }, []);
 
-  async function loadPosts() {
+  async function loadUsers() {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          profiles:user_id (username, full_name),
-          routines:routine_id (title, difficulty)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      let query = supabase
+        .from("profiles")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
 
+      if (searchQuery) {
+        query = supabase
+          .from("profiles")
+          .select("*")
+          .or(
+            `username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`
+          )
+          .limit(20);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      setPosts(data || []);
+      setUsers(data || []);
     } catch (error) {
-      console.error('Error loading posts:', error);
+      console.error("Error loading users:", error);
     } finally {
       setLoading(false);
     }
   }
 
-  async function createPost() {
-    if (!profile || !newPostContent.trim()) return;
-
+  async function loadUserRoutines(userId: string) {
     try {
-      const { error } = await supabase.from('posts').insert({
-        user_id: profile.id,
-        content: newPostContent,
-        post_type: newPostType,
-      });
+      setLoadingRoutines(true);
+      const { data, error } = await supabase
+        .from("routines")
+        .select("id, title, difficulty, duration_minutes")
+        .eq("creator_id", userId)
+        .eq("is_public", true);
 
       if (error) throw error;
-      setNewPostContent('');
-      loadPosts();
+      setUserRoutines(data || []);
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error("Error loading user routines:", error);
+    } finally {
+      setLoadingRoutines(false);
     }
   }
 
-  async function toggleLike(postId: string) {
-    if (!profile) return;
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadUsers();
+  };
 
-    try {
-      const { data: existingLike } = await supabase
-        .from('post_likes')
-        .select('id')
-        .eq('post_id', postId)
-        .eq('user_id', profile.id)
-        .maybeSingle();
-
-      if (existingLike) {
-        await supabase.from('post_likes').delete().eq('id', existingLike.id);
-        await supabase.rpc('decrement_likes', { post_id: postId });
-      } else {
-        await supabase.from('post_likes').insert({
-          post_id: postId,
-          user_id: profile.id,
-        });
-        await supabase.rpc('increment_likes', { post_id: postId });
-      }
-
-      loadPosts();
-    } catch (error) {
-      console.error('Error toggling like:', error);
+  const handleUserClick = (user: Profile) => {
+    setSelectedUser(user);
+    if (user.is_public) {
+      loadUserRoutines(user.id);
+    } else {
+      setUserRoutines([]);
     }
+  };
+
+  const getRank = (avg: number): string => {
+    if (avg >= 90) return "S";
+    if (avg >= 80) return "A";
+    if (avg >= 70) return "B";
+    if (avg >= 60) return "C";
+    if (avg >= 50) return "D";
+    return "E";
+  };
+
+  const getRankColor = (rank: string): string => {
+    switch (rank) {
+      case "S":
+        return "from-yellow-500 to-orange-500";
+      case "A":
+        return "from-green-500 to-emerald-500";
+      case "B":
+        return "from-blue-500 to-cyan-500";
+      case "C":
+        return "from-gray-500 to-slate-500";
+      case "D":
+        return "from-gray-600 to-gray-700";
+      default:
+        return "from-gray-700 to-gray-800";
+    }
+  };
+
+  if (selectedUser) {
+    const stats = [
+      {
+        name: "Fuerza",
+        value: selectedUser.fuerza,
+        icon: Zap,
+        color: "from-red-500 to-orange-500",
+      },
+      {
+        name: "Resistencia",
+        value: selectedUser.resistencia,
+        icon: Heart,
+        color: "from-blue-500 to-cyan-500",
+      },
+      {
+        name: "Técnica",
+        value: selectedUser.tecnica,
+        icon: Target,
+        color: "from-green-500 to-emerald-500",
+      },
+      {
+        name: "Definición",
+        value: selectedUser.definicion,
+        icon: TrendingUp,
+        color: "from-purple-500 to-pink-500",
+      },
+      {
+        name: "Constancia",
+        value: selectedUser.constancia,
+        icon: Award,
+        color: "from-yellow-500 to-orange-500",
+      },
+    ];
+
+    const averageStat = Math.round(
+      (selectedUser.fuerza +
+        selectedUser.resistencia +
+        selectedUser.tecnica +
+        selectedUser.definicion +
+        selectedUser.constancia) /
+        5
+    );
+    const overallRank = getRank(averageStat);
+
+    return (
+      <div className="space-y-6">
+        <button
+          onClick={() => setSelectedUser(null)}
+          className="text-gray-400 hover:text-white flex items-center gap-2 transition-colors"
+        >
+          <ChevronRight className="w-4 h-4 rotate-180" />
+          Volver a la lista
+        </button>
+
+        <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
+          <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
+            <div className="w-32 h-32 bg-gradient-to-br from-white to-gray-300 rounded-sm flex items-center justify-center text-6xl font-thin text-[#0a0a0a]">
+              {selectedUser.username.charAt(0).toUpperCase()}
+            </div>
+
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
+                <h1 className="text-3xl font-thin text-white">
+                  {selectedUser.full_name}
+                </h1>
+                {selectedUser.is_public ? (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-green-500/10 text-green-500 border border-green-500/20 rounded-full text-xs">
+                    <Globe className="w-3 h-3" /> Público
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 px-2 py-0.5 bg-red-500/10 text-red-500 border border-red-500/20 rounded-full text-xs">
+                    <Lock className="w-3 h-3" /> Privado
+                  </span>
+                )}
+              </div>
+              <p className="text-gray-400 font-light mb-4">
+                @{selectedUser.username}
+              </p>
+              {selectedUser.bio && (
+                <p className="text-gray-300 font-light mb-4">
+                  {selectedUser.bio}
+                </p>
+              )}
+            </div>
+
+            {selectedUser.is_public && (
+              <div
+                className={`w-32 h-32 bg-gradient-to-br ${getRankColor(
+                  overallRank
+                )} rounded-sm flex flex-col items-center justify-center`}
+              >
+                <span className="text-6xl font-thin text-white">
+                  {overallRank}
+                </span>
+                <span className="text-xs text-white/80 font-light mt-1">
+                  RANK
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {selectedUser.is_public ? (
+          <>
+            <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
+              <h2 className="text-2xl font-thin text-white mb-6">
+                Estadísticas
+              </h2>
+              <div className="space-y-6">
+                {stats.map((stat) => (
+                  <div key={stat.name}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <stat.icon className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm font-light text-gray-300">
+                          {stat.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-lg font-light text-white">
+                          {stat.value}
+                        </span>
+                        <span className="text-sm font-light text-gray-400 w-8">
+                          {getRank(stat.value)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-2 bg-[#0a0a0a] rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${stat.color} rounded-full`}
+                        style={{ width: `${stat.value}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
+              <h2 className="text-2xl font-thin text-white mb-6">
+                Rutinas Públicas
+              </h2>
+              {loadingRoutines ? (
+                <div className="text-center py-8">
+                  <div className="inline-block w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : userRoutines.length === 0 ? (
+                <p className="text-gray-400 font-light text-center py-8">
+                  Este usuario no tiene rutinas públicas.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {userRoutines.map((routine) => (
+                    <div
+                      key={routine.id}
+                      className="bg-[#0a0a0a] border border-[#1f1f1f] p-4 rounded-sm"
+                    >
+                      <h3 className="text-white font-light mb-2">
+                        {routine.title}
+                      </h3>
+                      <div className="flex items-center gap-4 text-sm text-gray-400">
+                        <span className="capitalize">{routine.difficulty}</span>
+                        <span>{routine.duration_minutes} min</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-12 text-center">
+            <Lock className="w-12 h-12 text-gray-500 mx-auto mb-4" />
+            <h3 className="text-xl font-light text-white mb-2">
+              Perfil Privado
+            </h3>
+            <p className="text-gray-400 font-light">
+              Las estadísticas y rutinas de este usuario son privadas.
+            </p>
+          </div>
+        )}
+      </div>
+    );
   }
-
-  const getPostIcon = (type: string) => {
-    switch (type) {
-      case 'achievement': return Trophy;
-      case 'routine': return Dumbbell;
-      default: return Target;
-    }
-  };
-
-  const getPostTypeLabel = (type: string) => {
-    switch (type) {
-      case 'achievement': return 'Logro';
-      case 'routine': return 'Rutina';
-      default: return 'Meta';
-    }
-  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-thin text-white mb-2">Social</h1>
-        <p className="text-gray-400 font-light">Comparte tu progreso y conecta con otros</p>
+        <h1 className="text-3xl font-thin text-white mb-2">Comunidad</h1>
+        <p className="text-gray-400 font-light">
+          Encuentra otros usuarios y mira su progreso
+        </p>
       </div>
 
-      <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
-        <div className="flex gap-2 mb-4">
-          {[
-            { id: 'goal', label: 'Meta', icon: Target },
-            { id: 'achievement', label: 'Logro', icon: Trophy },
-            { id: 'routine', label: 'Rutina', icon: Dumbbell },
-          ].map((type) => (
-            <button
-              key={type.id}
-              onClick={() => setNewPostType(type.id as typeof newPostType)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-sm text-sm font-light transition-all duration-300 ${
-                newPostType === type.id
-                  ? 'bg-white text-[#0a0a0a]'
-                  : 'bg-[#0a0a0a] text-gray-400 hover:text-white'
-              }`}
-            >
-              <type.icon className="w-4 h-4" />
-              {type.label}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          value={newPostContent}
-          onChange={(e) => setNewPostContent(e.target.value)}
-          placeholder="¿Qué quieres compartir?"
-          className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm px-4 py-3 text-white font-light focus:outline-none focus:border-white transition-colors duration-300 resize-none"
-          rows={3}
+      <form onSubmit={handleSearch} className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Buscar por nombre de usuario..."
+          className="w-full bg-[#141414] border border-[#1f1f1f] rounded-sm pl-12 pr-4 py-3 text-white font-light focus:outline-none focus:border-white transition-colors duration-300"
         />
-
-        <button
-          onClick={createPost}
-          disabled={!newPostContent.trim()}
-          className="mt-4 px-6 py-2 bg-white text-[#0a0a0a] rounded-sm font-light hover:bg-gray-100 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Publicar
-        </button>
-      </div>
+      </form>
 
       {loading ? (
         <div className="text-center py-12">
           <div className="inline-block w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="space-y-4">
-          {posts.map((post) => {
-            const PostIcon = getPostIcon(post.post_type);
-            return (
-              <div
-                key={post.id}
-                className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 hover:border-[#2f2f2f] transition-all duration-300"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-white to-gray-300 rounded-sm flex items-center justify-center text-xl font-thin text-[#0a0a0a] flex-shrink-0">
-                    {post.profiles?.username.charAt(0).toUpperCase() || 'U'}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-white font-light">{post.profiles?.full_name}</span>
-                      <span className="text-gray-500 text-sm font-light">
-                        @{post.profiles?.username}
-                      </span>
-                      <span className="text-gray-600 text-sm font-light">·</span>
-                      <span className="text-gray-500 text-sm font-light">
-                        {new Date(post.created_at).toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short'
-                        })}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 mb-3">
-                      <PostIcon className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs text-gray-400 font-light">
-                        {getPostTypeLabel(post.post_type)}
-                      </span>
-                    </div>
-
-                    <p className="text-white font-light mb-4">{post.content}</p>
-
-                    {post.routines && (
-                      <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-3 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Dumbbell className="w-4 h-4 text-gray-400" />
-                          <span className="text-sm text-white font-light">
-                            {post.routines.title}
-                          </span>
-                          <span className="text-xs text-gray-400 font-light capitalize">
-                            · {post.routines.difficulty}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-6">
-                      <button
-                        onClick={() => toggleLike(post.id)}
-                        className="flex items-center gap-2 text-gray-400 hover:text-red-500 transition-colors duration-300"
-                      >
-                        <Heart className="w-5 h-5" />
-                        <span className="text-sm font-light">{post.likes_count}</span>
-                      </button>
-                      <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="text-sm font-light">0</span>
-                      </button>
-                      <button className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300">
-                        <Share2 className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {users.map((user) => (
+            <button
+              key={user.id}
+              onClick={() => handleUserClick(user)}
+              className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-4 hover:border-white transition-all duration-300 text-left group"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-white to-gray-300 rounded-sm flex items-center justify-center text-xl font-thin text-[#0a0a0a]">
+                  {user.username.charAt(0).toUpperCase()}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-white font-light truncate group-hover:text-gray-300 transition-colors">
+                    {user.full_name}
+                  </h3>
+                  <p className="text-gray-400 text-sm font-light truncate">
+                    @{user.username}
+                  </p>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-500 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
               </div>
-            );
-          })}
+            </button>
+          ))}
         </div>
       )}
     </div>

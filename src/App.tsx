@@ -1,16 +1,17 @@
-import { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
-import Layout from './components/Layout';
-import Home from './components/Home';
-import Calendar from './components/Calendar';
-import Routines from './components/Routines';
-import Social from './components/Social';
-import Profile from './components/Profile';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
+import Home from "./components/Home";
+import Routines from "./components/Routines";
+import Social from "./components/Social";
+import Profile from "./components/Profile";
+import Login from "./components/Login";
+import WeeklyPlanner from "./components/WeeklyPlanner";
+import Challenges from "./components/Challenges";
+import Tracking from "./components/Tracking";
 
 function AppContent() {
   const { user, loading } = useAuth();
-  const [currentView, setCurrentView] = useState('home');
 
   if (loading) {
     return (
@@ -25,12 +26,16 @@ function AppContent() {
   }
 
   return (
-    <Layout currentView={currentView} onViewChange={setCurrentView}>
-      {currentView === 'home' && <Home />}
-      {currentView === 'calendar' && <Calendar />}
-      {currentView === 'routines' && <Routines />}
-      {currentView === 'social' && <Social />}
-      {currentView === 'profile' && <Profile />}
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/tracking" element={<Tracking />} />
+        <Route path="/routines" element={<Routines />} />
+        <Route path="/weekly-planner" element={<WeeklyPlanner />} />
+        <Route path="/challenges" element={<Challenges />} />
+        <Route path="/social" element={<Social />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
     </Layout>
   );
 }
@@ -38,7 +43,9 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Router>
+        <AppContent />
+      </Router>
     </AuthProvider>
   );
 }
