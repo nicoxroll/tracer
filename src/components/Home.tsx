@@ -125,7 +125,9 @@ export default function Home() {
           .single();
 
         if (workoutSession) {
-          setTodayStatus(workoutSession.completed ? "completed" : "in_progress");
+          setTodayStatus(
+            workoutSession.completed ? "completed" : "in_progress"
+          );
         } else {
           setTodayStatus("pending");
         }
@@ -261,9 +263,7 @@ export default function Home() {
             <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
               <div className="flex items-center gap-3 mb-6">
                 <Award className="w-6 h-6 text-gray-400" />
-                <h2 className="text-2xl font-thin text-white">
-                  Rutina de Hoy
-                </h2>
+                <h2 className="text-2xl font-thin text-white">Rutina de Hoy</h2>
               </div>
 
               <div className="space-y-4">
@@ -273,13 +273,15 @@ export default function Home() {
                       <h3 className="text-xl font-light text-white">
                         {todayRoutine.title}
                       </h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-light ${
-                        todayStatus === "completed"
-                          ? "bg-green-500/20 text-green-400"
-                          : todayStatus === "in_progress"
-                          ? "bg-blue-500/20 text-blue-400"
-                          : "bg-yellow-500/20 text-yellow-400"
-                      }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-light ${
+                          todayStatus === "completed"
+                            ? "bg-green-500/20 text-green-400"
+                            : todayStatus === "in_progress"
+                            ? "bg-blue-500/20 text-blue-400"
+                            : "bg-yellow-500/20 text-yellow-400"
+                        }`}
+                      >
                         {todayStatus === "completed"
                           ? "Completado"
                           : todayStatus === "in_progress"
@@ -293,7 +295,9 @@ export default function Home() {
                     </p>
 
                     <div className="flex items-center justify-between text-sm text-gray-400">
-                      <span className="capitalize">{todayRoutine.difficulty}</span>
+                      <span className="capitalize">
+                        {todayRoutine.difficulty}
+                      </span>
                       <span>{todayRoutine.duration_minutes} min</span>
                     </div>
 

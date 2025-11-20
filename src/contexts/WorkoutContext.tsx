@@ -34,7 +34,9 @@ export function useWorkout() {
 }
 
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
-  const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(
+    null
+  );
 
   function startWorkout(routine: any, exercises: any[]) {
     setActiveWorkout({
@@ -52,7 +54,10 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   }
 
   function nextExercise() {
-    if (activeWorkout && activeWorkout.currentExerciseIndex < activeWorkout.exercises.length - 1) {
+    if (
+      activeWorkout &&
+      activeWorkout.currentExerciseIndex < activeWorkout.exercises.length - 1
+    ) {
       setActiveWorkout({
         ...activeWorkout,
         currentExerciseIndex: activeWorkout.currentExerciseIndex + 1,

@@ -1,9 +1,19 @@
-import { useState, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, Play, Pause, Square, Timer, Clock } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Pause,
+  Play,
+  Square,
+  Timer,
+  X,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import { useWorkout } from "../contexts/WorkoutContext";
 
 export default function ActiveWorkoutPanel() {
-  const { activeWorkout, endWorkout, nextExercise, previousExercise } = useWorkout();
+  const { activeWorkout, endWorkout, nextExercise, previousExercise } =
+    useWorkout();
   const [isMinimized, setIsMinimized] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [exerciseTime, setExerciseTime] = useState(0); // seconds for current exercise
@@ -16,10 +26,10 @@ export default function ActiveWorkoutPanel() {
     if (!activeWorkout || isPaused) return;
 
     const interval = setInterval(() => {
-      setTotalWorkoutTime(prev => prev + 1);
-      
+      setTotalWorkoutTime((prev) => prev + 1);
+
       if (isResting) {
-        setRestTime(prev => {
+        setRestTime((prev) => {
           if (prev <= 1) {
             setIsResting(false);
             return 0;
@@ -27,7 +37,7 @@ export default function ActiveWorkoutPanel() {
           return prev - 1;
         });
       } else {
-        setExerciseTime(prev => prev + 1);
+        setExerciseTime((prev) => prev + 1);
       }
     }, 1000);
 
@@ -36,13 +46,19 @@ export default function ActiveWorkoutPanel() {
 
   if (!activeWorkout) return null;
 
-  const currentExercise = activeWorkout.exercises[activeWorkout.currentExerciseIndex];
-  const progress = ((activeWorkout.currentExerciseIndex + 1) / activeWorkout.exercises.length) * 100;
+  const currentExercise =
+    activeWorkout.exercises[activeWorkout.currentExerciseIndex];
+  const progress =
+    ((activeWorkout.currentExerciseIndex + 1) /
+      activeWorkout.exercises.length) *
+    100;
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
   const handleStartRest = () => {
@@ -77,15 +93,21 @@ export default function ActiveWorkoutPanel() {
   };
 
   return (
-    <div className={`fixed left-0 top-0 h-full bg-[#141414] border-r border-[#1f1f1f] shadow-xl z-50 transition-all duration-300 ${
-      isMinimized ? 'w-16' : 'w-96'
-    }`}>
+    <div
+      className={`fixed left-0 top-0 h-full bg-[#141414] border-r border-[#1f1f1f] shadow-xl z-50 transition-all duration-300 ${
+        isMinimized ? "w-16" : "w-96"
+      }`}
+    >
       {/* Header */}
       <div className="p-4 border-b border-[#1f1f1f] flex items-center justify-between">
         {!isMinimized && (
           <div>
-            <h3 className="text-lg font-light text-white">Entrenamiento Activo</h3>
-            <p className="text-sm text-gray-400">{activeWorkout.routine.title}</p>
+            <h3 className="text-lg font-light text-white">
+              Entrenamiento Activo
+            </h3>
+            <p className="text-sm text-gray-400">
+              {activeWorkout.routine.title}
+            </p>
           </div>
         )}
         <div className="flex items-center gap-2">
@@ -93,7 +115,11 @@ export default function ActiveWorkoutPanel() {
             onClick={() => setIsMinimized(!isMinimized)}
             className="p-2 text-gray-400 hover:text-white transition-colors"
           >
-            <ChevronLeft className={`w-4 h-4 transition-transform ${isMinimized ? '' : 'rotate-180'}`} />
+            <ChevronLeft
+              className={`w-4 h-4 transition-transform ${
+                isMinimized ? "" : "rotate-180"
+              }`}
+            />
           </button>
           <button
             onClick={handleEndWorkout}
@@ -109,7 +135,10 @@ export default function ActiveWorkoutPanel() {
           {/* Progress Bar */}
           <div className="p-4 border-b border-[#1f1f1f]">
             <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
-              <span>Ejercicio {activeWorkout.currentExerciseIndex + 1} de {activeWorkout.exercises.length}</span>
+              <span>
+                Ejercicio {activeWorkout.currentExerciseIndex + 1} de{" "}
+                {activeWorkout.exercises.length}
+              </span>
               <span>{Math.round(progress)}%</span>
             </div>
             <div className="w-full bg-[#0a0a0a] rounded-full h-2">
@@ -124,7 +153,9 @@ export default function ActiveWorkoutPanel() {
           <div className="p-4 border-b border-[#1f1f1f] grid grid-cols-2 gap-4">
             <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-3 text-center">
               <Clock className="w-5 h-5 text-white mx-auto mb-1" />
-              <div className="text-lg font-thin text-white">{formatTime(totalWorkoutTime)}</div>
+              <div className="text-lg font-thin text-white">
+                {formatTime(totalWorkoutTime)}
+              </div>
               <div className="text-xs text-gray-400">Total</div>
             </div>
             <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-3 text-center">
@@ -132,7 +163,9 @@ export default function ActiveWorkoutPanel() {
               <div className="text-lg font-thin text-white">
                 {isResting ? formatTime(restTime) : formatTime(exerciseTime)}
               </div>
-              <div className="text-xs text-gray-400">{isResting ? "Descanso" : "Ejercicio"}</div>
+              <div className="text-xs text-gray-400">
+                {isResting ? "Descanso" : "Ejercicio"}
+              </div>
             </div>
           </div>
 
@@ -145,15 +178,21 @@ export default function ActiveWorkoutPanel() {
                 </h4>
                 <div className="grid grid-cols-3 gap-4 text-sm text-gray-400 mb-2">
                   <div>
-                    <div className="text-2xl font-thin text-white">{currentExercise.sets}</div>
+                    <div className="text-2xl font-thin text-white">
+                      {currentExercise.sets}
+                    </div>
                     <div className="text-xs">Series</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-thin text-white">{currentExercise.reps}</div>
+                    <div className="text-2xl font-thin text-white">
+                      {currentExercise.reps}
+                    </div>
                     <div className="text-xs">Reps</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-thin text-white">{currentExercise.rest_seconds}s</div>
+                    <div className="text-2xl font-thin text-white">
+                      {currentExercise.rest_seconds}s
+                    </div>
                     <div className="text-xs">Descanso</div>
                   </div>
                 </div>
@@ -176,7 +215,10 @@ export default function ActiveWorkoutPanel() {
 
                 <button
                   onClick={handleNextExercise}
-                  disabled={activeWorkout.currentExerciseIndex === activeWorkout.exercises.length - 1}
+                  disabled={
+                    activeWorkout.currentExerciseIndex ===
+                    activeWorkout.exercises.length - 1
+                  }
                   className="flex-1 p-3 bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm disabled:opacity-50 disabled:cursor-not-allowed hover:border-white transition-colors"
                 >
                   <ChevronRight className="w-5 h-5 text-white mx-auto" />
@@ -227,10 +269,16 @@ export default function ActiveWorkoutPanel() {
       {isMinimized && (
         <div className="flex-1 flex flex-col items-center justify-center p-4">
           <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center mb-2">
-            {isPaused ? <Pause className="w-4 h-4 text-white" /> : <Play className="w-4 h-4 text-white" />}
+            {isPaused ? (
+              <Pause className="w-4 h-4 text-white" />
+            ) : (
+              <Play className="w-4 h-4 text-white" />
+            )}
           </div>
           <div className="text-xs text-gray-400 text-center">
-            Entrenamiento<br />{isPaused ? "Pausado" : "Activo"}
+            Entrenamiento
+            <br />
+            {isPaused ? "Pausado" : "Activo"}
           </div>
         </div>
       )}

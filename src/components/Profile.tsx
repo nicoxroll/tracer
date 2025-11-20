@@ -175,7 +175,9 @@ export default function Profile() {
                   {isPublic ? "Público" : "Privado"}
                 </button>
               </div>
-              <p className="text-gray-400 font-light mb-4">@{profile.username}</p>
+              <p className="text-gray-400 font-light mb-4">
+                @{profile.username}
+              </p>
               {profile.bio && (
                 <p className="text-gray-300 font-light mb-4">{profile.bio}</p>
               )}
@@ -232,11 +234,11 @@ export default function Profile() {
           ].map((stat) => (
             <div key={stat.name} className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-white font-light text-sm">
-                  {stat.name}
-                </h3>
+                <h3 className="text-white font-light text-sm">{stat.name}</h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400 text-xs">{stat.value}/100</span>
+                  <span className="text-gray-400 text-xs">
+                    {stat.value}/100
+                  </span>
                   <div
                     className={`w-8 h-8 bg-gradient-to-br ${getRankColor(
                       stat.rank

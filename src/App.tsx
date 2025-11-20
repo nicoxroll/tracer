@@ -1,14 +1,14 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { WorkoutProvider } from "./contexts/WorkoutContext";
-import Layout from "./components/Layout";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import Challenges from "./components/Challenges";
 import Home from "./components/Home";
+import Layout from "./components/Layout";
+import Login from "./components/Login";
+import Profile from "./components/Profile";
 import Routines from "./components/Routines";
 import Social from "./components/Social";
-import Profile from "./components/Profile";
-import Login from "./components/Login";
 import WeeklyPlanner from "./components/WeeklyPlanner";
-import Challenges from "./components/Challenges";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { WorkoutProvider } from "./contexts/WorkoutContext";
 
 function AppContent() {
   const { user, loading } = useAuth();

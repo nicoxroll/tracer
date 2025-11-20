@@ -1,17 +1,17 @@
+import {
+  Calendar,
+  Clock,
+  Dumbbell,
+  Edit,
+  Plus,
+  Star,
+  Trash2,
+  TrendingUp,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../lib/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import {
-  Clock,
-  TrendingUp,
-  Star,
-  Plus,
-  Edit,
-  Trash2,
-  Dumbbell,
-  Calendar,
-} from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 type Exercise = {
   id: string;
@@ -309,7 +309,7 @@ export default function Routines() {
 
       {/* Routine CRUD Modal */}
       {(editingRoutine !== null || newRoutine.title) && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -428,7 +428,7 @@ export default function Routines() {
 
       {/* Assign to Week Modal */}
       {assigningRoutine && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
