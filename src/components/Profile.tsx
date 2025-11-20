@@ -1,18 +1,12 @@
 import { Globe, Lock, Trophy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
   PolarAngleAxis,
   PolarGrid,
   PolarRadiusAxis,
   Radar,
   RadarChart,
   ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
 } from "recharts";
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -63,34 +57,6 @@ const getRankColor = (rank: string): string => {
       return "from-gray-600 to-gray-700";
     default:
       return "from-gray-700 to-gray-800";
-  }
-};
-
-const calculateLevel = (experience: number) => {
-  if (experience >= 1600) return "S";
-  if (experience >= 800) return "A";
-  if (experience >= 400) return "B";
-  if (experience >= 200) return "C";
-  if (experience >= 50) return "D";
-  return "E";
-};
-
-const getNextLevelXP = (currentLevel: string) => {
-  switch (currentLevel) {
-    case "E":
-      return 50;
-    case "D":
-      return 100;
-    case "C":
-      return 200;
-    case "B":
-      return 400;
-    case "A":
-      return 800;
-    case "S":
-      return 1600; // Max level
-    default:
-      return 50;
   }
 };
 
@@ -181,41 +147,43 @@ export default function Profile() {
   return (
     <div className="space-y-6">
       <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
-        <div className="flex flex-col md:flex-row gap-8 items-center md:items-start">
-          <div className="w-32 h-32 bg-gradient-to-br from-white to-gray-300 rounded-sm flex items-center justify-center text-6xl font-thin text-[#0a0a0a]">
-            {profile.username.charAt(0).toUpperCase()}
-          </div>
-
-          <div className="flex-1 text-center md:text-left">
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
-              <h1 className="text-3xl font-thin text-white">
-                {profile.full_name}
-              </h1>
-              <button
-                onClick={togglePrivacy}
-                disabled={updating}
-                className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-light transition-all duration-300 ${
-                  isPublic
-                    ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                    : "bg-red-500/10 text-red-500 border border-red-500/20"
-                }`}
-              >
-                {isPublic ? (
-                  <Globe className="w-3 h-3" />
-                ) : (
-                  <Lock className="w-3 h-3" />
-                )}
-                {isPublic ? "Público" : "Privado"}
-              </button>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-gradient-to-br from-white to-gray-300 rounded-sm flex items-center justify-center text-4xl font-thin text-[#0a0a0a]">
+              {profile.username.charAt(0).toUpperCase()}
             </div>
-            <p className="text-gray-400 font-light mb-4">@{profile.username}</p>
-            {profile.bio && (
-              <p className="text-gray-300 font-light mb-4">{profile.bio}</p>
-            )}
-            <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-              <span className="px-3 py-1 bg-white text-[#0a0a0a] text-xs rounded-sm font-light">
-                {profile.role === "coach" ? "COACH" : "TRAINER"}
-              </span>
+
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-3xl font-thin text-white">
+                  {profile.full_name}
+                </h1>
+                <button
+                  onClick={togglePrivacy}
+                  disabled={updating}
+                  className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-light transition-all duration-300 ${
+                    isPublic
+                      ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                      : "bg-red-500/10 text-red-500 border border-red-500/20"
+                  }`}
+                >
+                  {isPublic ? (
+                    <Globe className="w-3 h-3" />
+                  ) : (
+                    <Lock className="w-3 h-3" />
+                  )}
+                  {isPublic ? "Público" : "Privado"}
+                </button>
+              </div>
+              <p className="text-gray-400 font-light mb-4">@{profile.username}</p>
+              {profile.bio && (
+                <p className="text-gray-300 font-light mb-4">{profile.bio}</p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 bg-white text-[#0a0a0a] text-xs rounded-sm font-light">
+                  {profile.role === "coach" ? "COACH" : "TRAINER"}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -234,7 +202,7 @@ export default function Profile() {
         <h2 className="text-2xl font-thin text-white mb-6">
           Estadísticas Detalladas
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="space-y-4">
           {[
             {
               name: "Fuerza",
@@ -262,165 +230,34 @@ export default function Profile() {
               rank: getRank(profile.constancia),
             },
           ].map((stat) => (
-            <div key={stat.name} className="text-center">
-              <div
-                className={`w-16 h-16 mx-auto mb-2 bg-gradient-to-br ${getRankColor(
-                  stat.rank
-                )} rounded-sm flex items-center justify-center`}
-              >
-                <span className="text-2xl font-thin text-white">
-                  {stat.rank}
-                </span>
+            <div key={stat.name} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-light text-sm">
+                  {stat.name}
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-xs">{stat.value}/100</span>
+                  <div
+                    className={`w-8 h-8 bg-gradient-to-br ${getRankColor(
+                      stat.rank
+                    )} rounded-sm flex items-center justify-center`}
+                  >
+                    <span className="text-sm font-thin text-white">
+                      {stat.rank}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-white font-light text-sm mb-1">
-                {stat.name}
-              </h3>
-              <p className="text-gray-400 text-xs">{stat.value}/100</p>
+              <div className="w-full bg-[#0a0a0a] rounded-full h-3">
+                <div
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                  style={{
+                    width: `${stat.value}%`,
+                  }}
+                ></div>
+              </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-8">
-        <h2 className="text-2xl font-thin text-white mb-6">
-          Progreso de Nivel
-        </h2>
-        <div className="flex items-center justify-between mb-6">
-          <div className="text-center">
-            <div className="text-4xl font-thin text-white mb-1">
-              {profile.level || "E"}
-            </div>
-            <div className="text-sm text-gray-400">Nivel Actual</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-thin text-white mb-1">
-              {profile.experience || 0}
-            </div>
-            <div className="text-sm text-gray-400">XP Total</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-thin text-white mb-1">
-              {calculateLevel(
-                (profile.experience || 0) +
-                  getNextLevelXP(profile.level || "E") -
-                  (profile.experience || 0)
-              )}
-            </div>
-            <div className="text-sm text-gray-400">Siguiente Nivel</div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Nivel {profile.level || "E"}</span>
-            <span>
-              {profile.experience || 0} / {getNextLevelXP(profile.level || "E")}{" "}
-              XP
-            </span>
-          </div>
-          <div className="w-full bg-[#0a0a0a] rounded-full h-4">
-            <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-4 rounded-full transition-all duration-500"
-              style={{
-                width: `${Math.min(
-                  100,
-                  ((profile.experience || 0) /
-                    getNextLevelXP(profile.level || "E")) *
-                    100
-                )}%`,
-              }}
-            ></div>
-          </div>
-        </div>
-
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              layout="horizontal"
-              data={[
-                {
-                  level: "E",
-                  xp: Math.min(50, profile.experience || 0),
-                  required: 50,
-                },
-                {
-                  level: "D",
-                  xp: Math.max(
-                    0,
-                    Math.min(100, (profile.experience || 0) - 50)
-                  ),
-                  required: 50,
-                },
-                {
-                  level: "C",
-                  xp: Math.max(
-                    0,
-                    Math.min(200, (profile.experience || 0) - 100)
-                  ),
-                  required: 100,
-                },
-                {
-                  level: "B",
-                  xp: Math.max(
-                    0,
-                    Math.min(400, (profile.experience || 0) - 200)
-                  ),
-                  required: 200,
-                },
-                {
-                  level: "A",
-                  xp: Math.max(
-                    0,
-                    Math.min(800, (profile.experience || 0) - 400)
-                  ),
-                  required: 400,
-                },
-                {
-                  level: "S",
-                  xp: Math.max(
-                    0,
-                    Math.min(1600, (profile.experience || 0) - 800)
-                  ),
-                  required: 800,
-                },
-              ]}
-              margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-              <XAxis type="number" stroke="#9ca3af" fontSize={12} />
-              <YAxis
-                dataKey="level"
-                type="category"
-                stroke="#9ca3af"
-                fontSize={12}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#141414",
-                  border: "1px solid #1f1f1f",
-                  borderRadius: "4px",
-                  color: "#ffffff",
-                }}
-                formatter={(value: any, name: any) => [
-                  `${value} XP`,
-                  name === "xp" ? "Progreso" : "Requerido",
-                ]}
-                labelStyle={{ color: "#ffffff" }}
-              />
-              <Bar
-                dataKey="xp"
-                fill="#3b82f6"
-                name="Progreso"
-                radius={[0, 4, 4, 0]}
-              />
-              <Bar
-                dataKey="required"
-                fill="#1f2937"
-                name="Requerido"
-                radius={[0, 4, 4, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
@@ -464,6 +301,7 @@ export default function Profile() {
               <PolarRadiusAxis
                 angle={90}
                 domain={[0, 100]}
+                tickCount={6}
                 tickFormatter={(value) => {
                   if (value >= 90) return "S";
                   if (value >= 80) return "A";

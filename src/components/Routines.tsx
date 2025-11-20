@@ -309,7 +309,21 @@ export default function Routines() {
 
       {/* Routine CRUD Modal */}
       {(editingRoutine !== null || newRoutine.title) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingRoutine(null);
+              setNewRoutine({
+                title: "",
+                description: "",
+                difficulty: "intermediate",
+                duration_minutes: 30,
+                is_public: false,
+              });
+            }
+          }}
+        >
           <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 w-full max-w-md">
             <h2 className="text-xl font-thin text-white mb-4">
               {editingRoutine ? "Editar Rutina" : "Nueva Rutina"}
@@ -414,7 +428,14 @@ export default function Routines() {
 
       {/* Assign to Week Modal */}
       {assigningRoutine && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setAssigningRoutine(null);
+            }
+          }}
+        >
           <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 w-full max-w-md">
             <h2 className="text-xl font-thin text-white mb-4">
               Agregar "{assigningRoutine.title}" a la semana

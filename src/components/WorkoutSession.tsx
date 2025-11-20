@@ -55,7 +55,6 @@ export default function WorkoutSession({
   const [workoutTime, setWorkoutTime] = useState(0); // in seconds
   const [restTime, setRestTime] = useState(0); // in seconds
   const [isWorkoutRunning, setIsWorkoutRunning] = useState(false);
-  const [isRestRunning, setIsRestRunning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sessionStarted, setSessionStarted] = useState(false);
 
@@ -162,7 +161,6 @@ export default function WorkoutSession({
       setCurrentExerciseIndex(0);
       setCompletedExercises(new Set());
       setIsResting(false);
-      setIsRestRunning(false);
 
       onToggleActive();
       onWorkoutComplete?.();
@@ -213,7 +211,6 @@ export default function WorkoutSession({
   function startRest(seconds: number) {
     setRestTime(seconds);
     setIsResting(true);
-    setIsRestRunning(true);
     setIsWorkoutRunning(false);
   }
 
@@ -221,7 +218,6 @@ export default function WorkoutSession({
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex((prev) => prev + 1);
       setIsResting(false);
-      setIsRestRunning(false);
       setRestTime(0);
     }
   }
@@ -230,7 +226,6 @@ export default function WorkoutSession({
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((prev) => prev - 1);
       setIsResting(false);
-      setIsRestRunning(false);
       setRestTime(0);
     }
   }
@@ -419,7 +414,6 @@ export default function WorkoutSession({
                 <button
                   onClick={() => {
                     setIsResting(false);
-                    setIsRestRunning(false);
                     setRestTime(0);
                   }}
                   className="px-4 py-2 bg-white text-[#0a0a0a] rounded-sm font-light hover:bg-gray-100 transition-all duration-300"

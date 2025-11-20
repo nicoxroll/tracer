@@ -1,5 +1,4 @@
 import {
-  Activity,
   BookOpen,
   Calendar,
   Dumbbell,
@@ -14,6 +13,8 @@ import {
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useWorkout } from "../contexts/WorkoutContext";
+import ActiveWorkoutPanel from "./ActiveWorkoutPanel";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -21,12 +22,12 @@ type LayoutProps = {
 
 export default function Layout({ children }: LayoutProps) {
   const { profile, signOut } = useAuth();
+  const { activeWorkout } = useWorkout();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const menuItems = [
     { path: "/", icon: Home, label: "Inicio" },
-    { path: "/tracking", icon: Activity, label: "Seguimiento" },
     { path: "/routines", icon: BookOpen, label: "Rutinas" },
     { path: "/weekly-planner", icon: Calendar, label: "Plan Semanal" },
     { path: "/challenges", icon: Trophy, label: "Retos" },
@@ -34,7 +35,7 @@ export default function Layout({ children }: LayoutProps) {
     { path: "/profile", icon: User, label: "Perfil" },
   ];
 
-  const isTrackingPage = location.pathname === "/tracking";
+  const isTrackingPage = false;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -43,7 +44,7 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link
-                to="/tracking"
+                to="/"
                 className="flex items-center gap-2 hover:opacity-80 transition-opacity"
               >
                 <Dumbbell className="w-6 h-6" />
@@ -70,9 +71,12 @@ export default function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center gap-4">
               <div className="hidden md:flex items-center gap-3">
-                <span className="text-sm text-gray-400 font-light">
+                <Link
+                  to="/profile"
+                  className="text-sm text-gray-400 font-light hover:text-white transition-colors duration-300"
+                >
                   {profile?.username}
-                </span>
+                </Link>
                 {profile?.role === "coach" && (
                   <span className="text-xs px-2 py-1 bg-white text-[#0a0a0a] rounded-sm font-light">
                     COACH
@@ -131,12 +135,14 @@ export default function Layout({ children }: LayoutProps) {
       </nav>
 
       <main
-        className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 ${
+        className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all duration-300 ${
           isTrackingPage ? "h-[calc(100vh-4rem)]" : ""
-        }`}
+        } ${activeWorkout ? "ml-96" : ""}`}
       >
         {children}
       </main>
+
+      <ActiveWorkoutPanel />
     </div>
   );
 }

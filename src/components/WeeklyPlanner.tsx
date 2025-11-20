@@ -11,7 +11,6 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Bar,
   BarChart,
@@ -994,7 +993,14 @@ export default function WeeklyPlanner() {
 
       {/* Day Details Modal */}
       {selectedDay && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedDay(null);
+            }
+          }}
+        >
           <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-thin text-white">
@@ -1161,72 +1167,6 @@ export default function WeeklyPlanner() {
         </div>
       )}
 
-      <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-thin text-white">Rutinas Disponibles</h2>
-          <Link
-            to="/routines"
-            className="flex items-center gap-2 px-4 py-2 bg-white text-[#0a0a0a] rounded-sm font-light hover:bg-gray-100 transition-all duration-300"
-          >
-            Gestionar Rutinas
-          </Link>
-        </div>
-
-        {routines.length === 0 ? (
-          <p className="text-gray-400 font-light text-center py-8">
-            No hay rutinas disponibles
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {routines.map((routine) => (
-              <div
-                key={routine.id}
-                className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm p-4"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-light text-white">
-                    {routine.title}
-                  </h3>
-                  <div className="flex gap-1">
-                    {routine.is_default && (
-                      <span className="px-2 py-1 text-xs bg-blue-500/20 text-blue-400 rounded-sm font-light">
-                        Defecto
-                      </span>
-                    )}
-                    {routine.is_public && !routine.is_default && (
-                      <span className="px-2 py-1 text-xs bg-green-500/20 text-green-400 rounded-sm font-light">
-                        Pública
-                      </span>
-                    )}
-                    {routine.creator_id === profile?.id &&
-                      !routine.is_public && (
-                        <span className="px-2 py-1 text-xs bg-purple-500/20 text-purple-400 rounded-sm font-light">
-                          Mía
-                        </span>
-                      )}
-                  </div>
-                </div>
-
-                <p className="text-gray-400 text-sm font-light mb-3 line-clamp-2">
-                  {routine.description}
-                </p>
-
-                <div className="flex items-center justify-between text-sm text-gray-400">
-                  <span className="capitalize">{routine.difficulty}</span>
-                  <span>{routine.duration_minutes} min</span>
-                </div>
-
-                {routine.profiles?.username &&
-                  routine.creator_id !== profile?.id && (
-                    <div className="text-xs text-gray-500 mt-2">
-                      por {routine.profiles.username}
-                    </div>
-                  )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

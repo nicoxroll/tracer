@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { WorkoutProvider } from "./contexts/WorkoutContext";
 import Layout from "./components/Layout";
 import Home from "./components/Home";
 import Routines from "./components/Routines";
@@ -8,7 +9,6 @@ import Profile from "./components/Profile";
 import Login from "./components/Login";
 import WeeklyPlanner from "./components/WeeklyPlanner";
 import Challenges from "./components/Challenges";
-import Tracking from "./components/Tracking";
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -29,7 +29,6 @@ function AppContent() {
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/tracking" element={<Tracking />} />
         <Route path="/routines" element={<Routines />} />
         <Route path="/weekly-planner" element={<WeeklyPlanner />} />
         <Route path="/challenges" element={<Challenges />} />
@@ -43,9 +42,11 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <WorkoutProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </WorkoutProvider>
     </AuthProvider>
   );
 }
