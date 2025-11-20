@@ -2,11 +2,8 @@ import {
   AlertCircle,
   Award,
   Calendar as CalendarIcon,
-  CheckCircle,
   ChevronLeft,
   ChevronRight,
-  Clock,
-  Play,
   TrendingUp,
   X,
 } from "lucide-react";
@@ -26,6 +23,18 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 
+type ExerciseLibrary = {
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
+  exercise_type: string;
+  equipment: string;
+  muscle_groups: string[];
+  difficulty: string;
+  instructions: string[];
+};
+
 type Routine = {
   id: string;
   title: string;
@@ -38,6 +47,41 @@ type Routine = {
   profiles?: {
     username: string;
   };
+};
+
+type DailyAssignment = {
+  id: string;
+  user_id: string;
+  date: string;
+  routine_id: string | null;
+  is_recurring: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type DailyRoutine = {
+  id: string;
+  user_id: string;
+  date: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  duration_minutes: number;
+  created_at: string;
+  updated_at: string;
+};
+
+type DailyRoutineExercise = {
+  id: string;
+  daily_routine_id: string;
+  exercise_id: string;
+  sets: number;
+  reps: string;
+  weight_kg: number;
+  rest_seconds: number;
+  order_index: number;
+  notes: string;
+  exercise_library?: ExerciseLibrary;
 };
 
 type WeeklyPlan = {
@@ -58,12 +102,21 @@ export default function WeeklyPlanner() {
   const { profile } = useAuth();
   const [routines, setRoutines] = useState<Routine[]>([]);
   const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlan>({});
+  const [dailyAssignments, setDailyAssignments] = useState<DailyAssignment[]>(
+    []
+  );
   const [workoutStatuses, setWorkoutStatuses] = useState<WorkoutStatus>({});
-  const [viewMode, setViewMode] = useState<"week" | "month" | "stats">("week");
+  const [viewMode, setViewMode] = useState<"month" | "stats">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<Date | string | null>(null);
   const [selectedDayExercises, setSelectedDayExercises] = useState<any[]>([]);
   const [statsData, setStatsData] = useState<any>(null);
+  const [applyToAllWeeks, setApplyToAllWeeks] = useState(false);
+  const [editingDailyRoutine, setEditingDailyRoutine] =
+    useState<DailyRoutine | null>(null);
+  const [dailyRoutineExercises, setDailyRoutineExercises] = useState<
+    DailyRoutineExercise[]
+  >([]);
 
   const days = [
     "Lunes",
@@ -114,6 +167,20 @@ export default function WeeklyPlanner() {
       setWeeklyPlan(plan);
     } catch (error) {
       console.error("Error loading weekly plan:", error);
+    }
+  }, [profile?.id]);
+
+  const loadDailyAssignments = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from("daily_assignments")
+        .select("*")
+        .eq("user_id", profile?.id);
+
+      if (error) throw error;
+      setDailyAssignments(data || []);
+    } catch (error) {
+      console.error("Error loading daily assignments:", error);
     }
   }, [profile?.id]);
 
@@ -301,6 +368,7 @@ export default function WeeklyPlanner() {
     if (profile) {
       loadRoutines();
       loadWeeklyPlan();
+      loadDailyAssignments();
       loadWorkoutStatuses();
       if (viewMode === "stats") {
         loadStatsData();
@@ -310,102 +378,152 @@ export default function WeeklyPlanner() {
     profile,
     loadRoutines,
     loadWeeklyPlan,
+    loadDailyAssignments,
     loadWorkoutStatuses,
     viewMode,
     loadStatsData,
   ]);
 
   // Assign routine to a day
-  async function assignRoutine(day: string, routineId: string | null) {
+  async function assignRoutine(
+    day: string,
+    routineId: string | null,
+    date?: Date,
+    applyToAllWeeks: boolean = false
+  ) {
     if (!profile) return;
 
     try {
-      if (routineId) {
-        // Upsert the weekly plan entry
-        const { error } = await supabase.from("weekly_plans").upsert(
-          {
-            user_id: profile.id,
-            day_of_week: day,
-            routine_id: routineId,
-            updated_at: new Date().toISOString(),
-          },
-          {
-            onConflict: "user_id,day_of_week",
-          }
-        );
+      if (date) {
+        // Specific date assignment
+        const dateStr = date.toISOString().split("T")[0];
 
-        if (error) throw error;
+        if (routineId) {
+          // Create or update daily assignment
+          const { error } = await supabase.from("daily_assignments").upsert(
+            {
+              user_id: profile.id,
+              date: dateStr,
+              routine_id: routineId,
+              is_recurring: applyToAllWeeks,
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: "user_id,date",
+            }
+          );
+
+          if (error) throw error;
+        } else {
+          // Delete daily assignment
+          const { error } = await supabase
+            .from("daily_assignments")
+            .delete()
+            .eq("user_id", profile.id)
+            .eq("date", dateStr);
+
+          if (error) throw error;
+        }
+
+        // If applying to all weeks, also update the weekly plan
+        if (applyToAllWeeks) {
+          const dayName = days[date.getDay()];
+          const { error } = await supabase.from("weekly_plans").upsert(
+            {
+              user_id: profile.id,
+              day_of_week: dayName,
+              routine_id: routineId,
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: "user_id,day_of_week",
+            }
+          );
+
+          if (error) throw error;
+
+          // Update local weekly plan
+          setWeeklyPlan((prev) => ({
+            ...prev,
+            [dayName]: routineId,
+          }));
+        } else {
+          // Update local daily assignments
+          setDailyAssignments((prev) => {
+            const existingIndex = prev.findIndex(
+              (assignment) => assignment.date === dateStr
+            );
+
+            if (routineId) {
+              const newAssignment: DailyAssignment = {
+                id: existingIndex >= 0 ? prev[existingIndex].id : "",
+                user_id: profile.id,
+                date: dateStr,
+                routine_id: routineId,
+                is_recurring: false,
+                created_at:
+                  existingIndex >= 0
+                    ? prev[existingIndex].created_at
+                    : new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+
+              if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = newAssignment;
+                return updated;
+              } else {
+                return [...prev, newAssignment];
+              }
+            } else {
+              // Remove assignment
+              return prev.filter((assignment) => assignment.date !== dateStr);
+            }
+          });
+        }
       } else {
-        // Delete the entry if no routine is assigned
-        const { error } = await supabase
-          .from("weekly_plans")
-          .delete()
-          .eq("user_id", profile.id)
-          .eq("day_of_week", day);
+        // Weekly assignment (legacy)
+        if (routineId) {
+          const { error } = await supabase.from("weekly_plans").upsert(
+            {
+              user_id: profile.id,
+              day_of_week: day,
+              routine_id: routineId,
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: "user_id,day_of_week",
+            }
+          );
 
-        if (error) throw error;
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("weekly_plans")
+            .delete()
+            .eq("user_id", profile.id)
+            .eq("day_of_week", day);
+
+          if (error) throw error;
+        }
+
+        // Update local state
+        setWeeklyPlan((prev) => ({
+          ...prev,
+          [day]: routineId,
+        }));
       }
-
-      // Update local state
-      setWeeklyPlan((prev) => ({
-        ...prev,
-        [day]: routineId,
-      }));
 
       // Reload workout statuses to reflect changes
       loadWorkoutStatuses();
+      // Reload daily assignments if we modified them
+      if (date) {
+        loadDailyAssignments();
+      }
     } catch (error) {
       console.error("Error assigning routine:", error);
     }
   }
-
-  const getWorkoutStatusInfo = (day: string) => {
-    const status = workoutStatuses[day];
-    const hasRoutine = !!weeklyPlan[day];
-
-    if (!hasRoutine) {
-      return { icon: null, text: "", color: "" };
-    }
-
-    switch (status) {
-      case "completed":
-        return {
-          icon: CheckCircle,
-          text: "Completado",
-          color: "text-green-500",
-        };
-      case "in_progress":
-        return {
-          icon: Play,
-          text: "En progreso",
-          color: "text-blue-500",
-        };
-      case "pending":
-        return {
-          icon: Clock,
-          text: "Pendiente",
-          color: "text-yellow-500",
-        };
-      case "skipped":
-        return {
-          icon: X,
-          text: "Saltado",
-          color: "text-red-500",
-        };
-      case "incomplete":
-        return {
-          icon: AlertCircle,
-          text: "Incompleto",
-          color: "text-orange-500",
-        };
-      default:
-        return {
-          icon: Clock,
-          text: "Pendiente",
-          color: "text-gray-400",
-        };
-    }
-  };
 
   const getRoutineById = (id: string) => routines.find((r) => r.id === id);
 
@@ -447,8 +565,23 @@ export default function WeeklyPlanner() {
 
   const getDayStatus = (date: Date) => {
     const dayName = days[date.getDay()];
+    const dateStr = date.toISOString().split("T")[0];
+
+    // Check for daily assignment first (takes priority)
+    const dailyAssignment = dailyAssignments.find(
+      (assignment) => assignment.date === dateStr
+    );
+
+    let routineId = null;
+    if (dailyAssignment) {
+      routineId = dailyAssignment.routine_id;
+    } else {
+      // Fall back to weekly plan
+      routineId = weeklyPlan[dayName];
+    }
+
     const status = workoutStatuses[dayName];
-    const hasRoutine = !!weeklyPlan[dayName];
+    const hasRoutine = !!routineId;
 
     if (!hasRoutine) {
       return { status: null, routine: null };
@@ -456,7 +589,7 @@ export default function WeeklyPlanner() {
 
     return {
       status,
-      routine: getRoutineById(weeklyPlan[dayName]!),
+      routine: getRoutineById(routineId!),
     };
   };
 
@@ -480,15 +613,25 @@ export default function WeeklyPlanner() {
   // Load exercises for selected day
   const loadDayExercises = useCallback(
     async (day: Date | string) => {
-      let dayName: string;
+      let routineId: string | null = null;
 
       if (typeof day === "string") {
-        dayName = day;
+        // Weekly view - use weekly plan
+        routineId = weeklyPlan[day];
       } else {
-        dayName = days[day.getDay()];
-      }
+        // Monthly view - check daily assignment first, then weekly plan
+        const dateStr = day.toISOString().split("T")[0];
+        const dailyAssignment = dailyAssignments.find(
+          (assignment) => assignment.date === dateStr
+        );
 
-      const routineId = weeklyPlan[dayName];
+        if (dailyAssignment) {
+          routineId = dailyAssignment.routine_id;
+        } else {
+          const dayName = days[day.getDay()];
+          routineId = weeklyPlan[dayName];
+        }
+      }
 
       if (!routineId) {
         setSelectedDayExercises([]);
@@ -497,8 +640,13 @@ export default function WeeklyPlanner() {
 
       try {
         const { data, error } = await supabase
-          .from("exercises")
-          .select("*")
+          .from("routine_exercises")
+          .select(
+            `
+            *,
+            exercise_library (*)
+          `
+          )
           .eq("routine_id", routineId)
           .order("order_index", { ascending: true });
 
@@ -509,19 +657,26 @@ export default function WeeklyPlanner() {
         setSelectedDayExercises([]);
       }
     },
-    [weeklyPlan]
+    [weeklyPlan, dailyAssignments]
   );
 
   // Update workout status manually
   const updateWorkoutStatus = useCallback(
-    async (dayName: string, newStatus: string) => {
+    async (dayName: string, newStatus: string, date?: Date) => {
       if (!profile) return;
 
       try {
         const today = new Date();
-        const targetDate = new Date(today);
-        const dayIndex = days.indexOf(dayName);
-        targetDate.setDate(today.getDate() - today.getDay() + dayIndex);
+        let targetDate: Date;
+
+        if (date) {
+          targetDate = date;
+        } else {
+          // Find the date for this day of the week
+          const dayIndex = days.indexOf(dayName);
+          targetDate = new Date(today);
+          targetDate.setDate(today.getDate() - today.getDay() + dayIndex);
+        }
 
         // Check if session exists
         const { data: existingSession } = await supabase
@@ -537,7 +692,6 @@ export default function WeeklyPlanner() {
             .from("workout_sessions")
             .update({
               completed: newStatus === "completed",
-              updated_at: new Date().toISOString(),
             })
             .eq("id", existingSession.id);
 
@@ -547,11 +701,30 @@ export default function WeeklyPlanner() {
           if (newStatus === "completed" && !existingSession.completed) {
             await awardExperience(10, "workout_completed", existingSession.id);
           }
-        } else if (weeklyPlan[dayName]) {
-          // Create new session
+        } else {
+          // Create new session (this can happen for past days when manually updating status)
+          // Find the routine_id for this specific date
+          let routineIdForSession = null;
+
+          if (date) {
+            // Check daily assignments first
+            const dailyAssignment = dailyAssignments.find(
+              (assignment) =>
+                assignment.date === date.toISOString().split("T")[0]
+            );
+            if (dailyAssignment) {
+              routineIdForSession = dailyAssignment.routine_id;
+            }
+          }
+
+          // Fall back to weekly plan if no daily assignment
+          if (!routineIdForSession) {
+            routineIdForSession = weeklyPlan[dayName];
+          }
+
           const { error } = await supabase.from("workout_sessions").insert({
             user_id: profile.id,
-            routine_id: weeklyPlan[dayName],
+            routine_id: routineIdForSession,
             date: targetDate.toISOString().split("T")[0],
             completed: newStatus === "completed",
           });
@@ -664,7 +837,7 @@ export default function WeeklyPlanner() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-thin text-white mb-2">Planificación</h1>
+          <h1 className="text-3xl font-thin text-white mb-2">Seguimiento</h1>
           <p className="text-gray-400 font-light">
             Organiza tus entrenamientos
           </p>
@@ -673,17 +846,6 @@ export default function WeeklyPlanner() {
 
       {/* View Mode Tabs */}
       <div className="flex gap-2">
-        <button
-          onClick={() => setViewMode("week")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-light transition-all duration-300 ${
-            viewMode === "week"
-              ? "bg-white text-[#0a0a0a]"
-              : "bg-[#141414] border border-[#1f1f1f] text-gray-400 hover:text-white"
-          }`}
-        >
-          <CalendarIcon className="w-4 h-4" />
-          Vista Semanal
-        </button>
         <button
           onClick={() => setViewMode("month")}
           className={`flex items-center gap-2 px-4 py-2 rounded-sm text-sm font-light transition-all duration-300 ${
@@ -707,53 +869,6 @@ export default function WeeklyPlanner() {
           Estadísticas
         </button>
       </div>
-
-      {viewMode === "week" && (
-        <>
-          {/* Weekly Calendar */}
-          <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {days.map((day) => {
-              const statusInfo = getWorkoutStatusInfo(day);
-              const StatusIcon = statusInfo.icon;
-
-              return (
-                <div
-                  key={day}
-                  onClick={() => {
-                    setSelectedDay(day);
-                    loadDayExercises(day);
-                  }}
-                  className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-4 cursor-pointer hover:border-white/50 transition-all duration-300"
-                >
-                  <h3 className="text-lg font-thin text-white mb-4">{day}</h3>
-
-                  {weeklyPlan[day] && StatusIcon && (
-                    <div className="text-center">
-                      <div className="flex items-center justify-center gap-2 mb-2">
-                        <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
-                        <span
-                          className={`text-sm font-light ${statusInfo.color}`}
-                        >
-                          {statusInfo.text}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 font-light">
-                        {getRoutineById(weeklyPlan[day]!)?.duration_minutes} min
-                      </div>
-                    </div>
-                  )}
-
-                  {!weeklyPlan[day] && (
-                    <div className="text-center text-gray-500 text-sm font-light">
-                      Sin rutina asignada
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
 
       {viewMode === "month" && (
         <>
@@ -807,11 +922,7 @@ export default function WeeklyPlanner() {
                 return (
                   <div
                     key={index}
-                    onClick={() => {
-                      setSelectedDay(date);
-                      loadDayExercises(date);
-                    }}
-                    className={`aspect-square border rounded-sm p-2 transition-all duration-300 cursor-pointer hover:scale-105 ${
+                    className={`aspect-square border rounded-sm p-2 transition-all duration-300 cursor-pointer hover:scale-105 relative group ${
                       dayStatus.status
                         ? `${getStatusColor(dayStatus.status)} border-2`
                         : "border-[#1f1f1f] hover:border-white/50"
@@ -832,6 +943,95 @@ export default function WeeklyPlanner() {
                         </div>
                       )}
                     </div>
+
+                    {/* Quick Status Buttons - Show on hover for days with routines */}
+                    {dayStatus.routine && (
+                      <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-sm flex items-center justify-center">
+                        <div className="flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateWorkoutStatus(
+                                days[date.getDay()],
+                                "pending",
+                                date
+                              );
+                            }}
+                            className={`w-6 h-6 rounded-sm border text-xs font-light transition-all duration-200 ${
+                              dayStatus.status === "pending"
+                                ? "bg-yellow-500 text-black border-yellow-500"
+                                : "bg-yellow-500/20 border-yellow-500/50 text-yellow-400 hover:bg-yellow-500 hover:text-black"
+                            }`}
+                            title="Marcar como pendiente"
+                          >
+                            P
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateWorkoutStatus(
+                                days[date.getDay()],
+                                "in_progress",
+                                date
+                              );
+                            }}
+                            className={`w-6 h-6 rounded-sm border text-xs font-light transition-all duration-200 ${
+                              dayStatus.status === "in_progress"
+                                ? "bg-blue-500 text-white border-blue-500"
+                                : "bg-blue-500/20 border-blue-500/50 text-blue-400 hover:bg-blue-500 hover:text-white"
+                            }`}
+                            title="Marcar como en progreso"
+                          >
+                            E
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateWorkoutStatus(
+                                days[date.getDay()],
+                                "completed",
+                                date
+                              );
+                            }}
+                            className={`w-6 h-6 rounded-sm border text-xs font-light transition-all duration-200 ${
+                              dayStatus.status === "completed"
+                                ? "bg-green-500 text-white border-green-500"
+                                : "bg-green-500/20 border-green-500/50 text-green-400 hover:bg-green-500 hover:text-white"
+                            }`}
+                            title="Marcar como completado"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateWorkoutStatus(
+                                days[date.getDay()],
+                                "skipped",
+                                date
+                              );
+                            }}
+                            className={`w-6 h-6 rounded-sm border text-xs font-light transition-all duration-200 ${
+                              dayStatus.status === "skipped"
+                                ? "bg-red-500 text-white border-red-500"
+                                : "bg-red-500/20 border-red-500/50 text-red-400 hover:bg-red-500 hover:text-white"
+                            }`}
+                            title="Marcar como saltado"
+                          >
+                            ✗
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Click handler for opening details modal */}
+                    <div
+                      className="absolute inset-0"
+                      onClick={() => {
+                        setSelectedDay(date);
+                        loadDayExercises(date);
+                      }}
+                    />
                   </div>
                 );
               })}
@@ -929,64 +1129,84 @@ export default function WeeklyPlanner() {
             </div>
 
             {/* Charts */}
-            {statsData && (
-              <>
-                {/* Daily Activity Chart */}
-                <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
-                  <h3 className="text-xl font-thin text-white mb-4">
-                    Actividad Diaria (Últimos 30 días)
-                  </h3>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={statsData.dailyStats}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                      <XAxis dataKey="date" stroke="#9ca3af" fontSize={12} />
-                      <YAxis stroke="#9ca3af" fontSize={12} />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "#141414",
-                          border: "1px solid #1f1f1f",
-                          borderRadius: "4px",
-                        }}
-                      />
-                      <Bar
-                        dataKey="completed"
-                        fill="#10b981"
-                        name="Completados"
-                      />
-                      <Bar dataKey="total" fill="#3b82f6" name="Asignados" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                {/* Status Distribution */}
-                {statsData.statusData.length > 0 && (
+            {statsData &&
+              statsData.dailyStats &&
+              statsData.dailyStats.length > 0 && (
+                <>
+                  {/* Daily Activity Chart */}
                   <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
                     <h3 className="text-xl font-thin text-white mb-4">
-                      Distribución de Estados (Esta semana)
+                      Actividad Diaria (Últimos 30 días)
                     </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={statsData.statusData}
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={100}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}`}
-                        >
-                          {statsData.statusData.map(
-                            (entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            )
-                          )}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div style={{ width: "100%", height: "300px" }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={statsData.dailyStats}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="#1f1f1f"
+                          />
+                          <XAxis
+                            dataKey="date"
+                            stroke="#9ca3af"
+                            fontSize={12}
+                          />
+                          <YAxis stroke="#9ca3af" fontSize={12} />
+                          <Tooltip
+                            contentStyle={{
+                              backgroundColor: "#141414",
+                              border: "1px solid #1f1f1f",
+                              borderRadius: "4px",
+                            }}
+                          />
+                          <Bar
+                            dataKey="completed"
+                            fill="#10b981"
+                            name="Completados"
+                          />
+                          <Bar
+                            dataKey="total"
+                            fill="#3b82f6"
+                            name="Asignados"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                )}
-              </>
-            )}
+
+                  {/* Status Distribution */}
+                  {statsData.statusData && statsData.statusData.length > 0 && (
+                    <div className="bg-[#141414] border border-[#1f1f1f] rounded-sm p-6">
+                      <h3 className="text-xl font-thin text-white mb-4">
+                        Distribución de Estados (Esta semana)
+                      </h3>
+                      <div style={{ width: "100%", height: "300px" }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={statsData.statusData}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              dataKey="value"
+                              label={({ name, value }) => `${name}: ${value}`}
+                            >
+                              {statsData.statusData.map(
+                                (entry: any, index: number) => (
+                                  <Cell
+                                    key={`cell-${index}`}
+                                    fill={entry.color}
+                                  />
+                                )
+                              )}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
           </div>
         </>
       )}
@@ -994,7 +1214,7 @@ export default function WeeklyPlanner() {
       {/* Day Details Modal */}
       {selectedDay && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          className="fixed top-0 left-0 w-screen h-screen bg-black/50 flex items-center justify-center z-50"
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setSelectedDay(null);
@@ -1023,10 +1243,21 @@ export default function WeeklyPlanner() {
 
             {(() => {
               let dayName: string;
+              let dayDate: Date;
+              let isPastDay: boolean;
               let dayStatus: { status: string | null; routine: any };
 
               if (typeof selectedDay === "string") {
                 dayName = selectedDay;
+                dayDate = new Date();
+                // Find the date for this day of the week
+                const today = new Date();
+                const dayIndex = days.indexOf(dayName);
+                dayDate = new Date(today);
+                dayDate.setDate(today.getDate() - today.getDay() + dayIndex);
+                isPastDay =
+                  dayDate < new Date() &&
+                  !dayDate.toDateString().includes(new Date().toDateString());
                 const status = workoutStatuses[dayName];
                 const hasRoutine = !!weeklyPlan[dayName];
                 dayStatus = {
@@ -1036,23 +1267,52 @@ export default function WeeklyPlanner() {
                     : null,
                 };
               } else {
+                dayDate = selectedDay;
                 dayName = days[selectedDay.getDay()];
+                isPastDay =
+                  selectedDay < new Date() &&
+                  !selectedDay
+                    .toDateString()
+                    .includes(new Date().toDateString());
                 dayStatus = getDayStatus(selectedDay);
               }
 
               return (
                 <div className="space-y-6">
+                  {/* Show if day is in the past */}
+                  {isPastDay && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-sm p-4">
+                      <div className="flex items-center gap-2 text-yellow-400">
+                        <AlertCircle className="w-5 h-5" />
+                        <span className="font-light">
+                          Este día ya pasó. Los cambios se guardan como
+                          registros históricos.
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Routine Selection */}
                   <div>
                     <label className="block text-sm font-light text-gray-400 mb-2">
                       Rutina Asignada
                     </label>
                     <select
-                      value={weeklyPlan[dayName] || ""}
+                      value={dayStatus.routine?.id || ""}
                       onChange={(e) =>
-                        assignRoutine(dayName, e.target.value || null)
+                        assignRoutine(
+                          dayName,
+                          e.target.value || null,
+                          typeof selectedDay === "object"
+                            ? selectedDay
+                            : undefined,
+                          applyToAllWeeks
+                        )
                       }
-                      className="w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm px-4 py-2 text-white font-light focus:outline-none focus:border-white"
+                      disabled={isPastDay}
+                      className={`w-full bg-[#0a0a0a] border border-[#1f1f1f] rounded-sm px-4 py-2 text-white font-light focus:outline-none focus:border-white ${
+                        isPastDay ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
                     >
                       <option value="">Sin rutina</option>
                       {routines.map((routine) => (
@@ -1062,6 +1322,28 @@ export default function WeeklyPlanner() {
                       ))}
                     </select>
                   </div>
+
+                  {/* Apply to all weeks checkbox - only show for future days */}
+                  {typeof selectedDay === "object" && !isPastDay && (
+                    <div>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={applyToAllWeeks}
+                          onChange={(e) => setApplyToAllWeeks(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-sm text-gray-400 font-light">
+                          Aplicar a todas las semanas
+                        </span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Si marcas esta opción, esta rutina se asignará
+                        automáticamente a todos los {dayName.toLowerCase()}s
+                        futuros.
+                      </p>
+                    </div>
+                  )}
 
                   {/* Status Update */}
                   <div>
@@ -1099,7 +1381,13 @@ export default function WeeklyPlanner() {
                         <button
                           key={status.value}
                           onClick={() =>
-                            updateWorkoutStatus(dayName, status.value)
+                            updateWorkoutStatus(
+                              dayName,
+                              status.value,
+                              typeof selectedDay === "object"
+                                ? selectedDay
+                                : undefined
+                            )
                           }
                           className={`px-3 py-2 rounded-sm border font-light transition-all duration-300 ${
                             dayStatus.status === status.value

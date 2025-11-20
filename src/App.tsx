@@ -1,5 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Challenges from "./components/Challenges";
+import ExerciseLibrary from "./components/ExerciseLibrary";
 import Home from "./components/Home";
 import Layout from "./components/Layout";
 import Login from "./components/Login";
@@ -29,6 +30,7 @@ function AppContent() {
     <Layout>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/exercises" element={<ExerciseLibrary />} />
         <Route path="/routines" element={<Routines />} />
         <Route path="/weekly-planner" element={<WeeklyPlanner />} />
         <Route path="/challenges" element={<Challenges />} />

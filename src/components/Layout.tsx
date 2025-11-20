@@ -3,6 +3,7 @@ import {
   Calendar,
   Dumbbell,
   Home,
+  Library,
   LogOut,
   Menu,
   Trophy,
@@ -28,8 +29,9 @@ export default function Layout({ children }: LayoutProps) {
 
   const menuItems = [
     { path: "/", icon: Home, label: "Inicio" },
+    { path: "/exercises", icon: Library, label: "Ejercicios" },
     { path: "/routines", icon: BookOpen, label: "Rutinas" },
-    { path: "/weekly-planner", icon: Calendar, label: "Plan Semanal" },
+    { path: "/weekly-planner", icon: Calendar, label: "Seguimiento" },
     { path: "/challenges", icon: Trophy, label: "Retos" },
     { path: "/social", icon: Users, label: "Comunidad" },
     { path: "/profile", icon: User, label: "Perfil" },
