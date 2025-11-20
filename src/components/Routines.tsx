@@ -89,7 +89,8 @@ export default function Routines() {
   const [newRoutineExercises, setNewRoutineExercises] = useState<any[]>([]);
   const [exerciseSearchTerm, setExerciseSearchTerm] = useState("");
   const [showExerciseDropdown, setShowExerciseDropdown] = useState(false);
-  const [selectedExercise, setSelectedExercise] = useState<ExerciseLibrary | null>(null);
+  const [selectedExercise, setSelectedExercise] =
+    useState<ExerciseLibrary | null>(null);
   const [newRoutineExercise, setNewRoutineExercise] = useState({
     exercise_id: "",
     sets: 3,
